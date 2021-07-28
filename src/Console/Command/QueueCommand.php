@@ -10,7 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Exception;
 
-class QueueCommand
+class QueueCommand extends Command
 {
     protected static $defaultName = "queue";
 
