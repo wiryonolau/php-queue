@@ -13,4 +13,4 @@ return [
             Queue\Console\Command\QueueCommand::class => DI\create()
         ]
     ]
-]
+];
