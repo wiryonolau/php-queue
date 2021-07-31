@@ -1,16 +1,16 @@
 <?php
 
-namespace Itseasy;
+namespace Itseasy\Queue\Console;
 
 use DI;
 
 return [
     "console" => [
         "commands" => [
-            Queue\Console\Command\QueueCommand::class
+            Command\QueuePublishCommand::class
         ],
         "factories" => [
-            Queue\Console\Command\QueueCommand::class => DI\create()
+            Command\QueuePublishCommand::class => Command\Factory\QueuePublishCommandFactory::class
         ]
     ]
 ];

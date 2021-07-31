@@ -28,12 +28,24 @@ run:
     php:$(PHP_VERSION)-cli-ext $(filter-out $@,$(MAKECMDGOALS))
 unittest:
 	$(MAKE) build
+	docker stop $$(basename "`pwd`")_rabbitmq || true
+	docker stop $$(basename "`pwd`")_cli || true
+	docker run --rm -it -d \
+	    -p 5672:5672 \
+	    --name $$(basename "`pwd`")_rabbitmq \
+	rabbitmq:3.8-alpine
+	@while [ "$$(docker exec -it $$(basename "`pwd`")_rabbitmq rabbitmq-diagnostics -q check_port_connectivity > /dev/null && echo 0 || echo 1 )" -eq "1" ]; do \
+       	echo "Awaiting port 5672 to be ready" ; \
+       	sleep 1; \
+    done
 	docker run --rm -it \
         -v $$(pwd):/srv/$$(basename "`pwd`") \
 		-w /srv/$$(basename "`pwd`") \
 		--user "$$(id -u):$$(id -g)" \
         --name $$(basename "`pwd`")_cli \
+		--network host \
     php:$(PHP_VERSION)-cli-ext vendor/bin/phpunit --verbose --debug tests
+	docker stop $$(basename "`pwd`")_rabbitmq || true
 composer-install:
 	docker run --rm -it \
         -v $$(pwd):/srv/$$(basename "`pwd`") \

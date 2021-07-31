@@ -1,0 +1,29 @@
+version: "3.2"
+
+services:
+    rabbitmq:
+        image: rabbitmq:3.8-alpine
+        healthcheck:
+            test:
+                - "CMD"
+                - "rabbitmq-diagnostics"
+                - "-q"
+                - "check_port_connectivity"
+            interval: 5s
+            timeout: 5s
+            retries: 3
+        restart: "no"
+    test:
+        image: php:${PHP_VERSION:-7.4}-cli-ext
+        command: vendor/bin/phpunit --verbose --debug tests
+        environment:
+            - RABBITMQ_SERVER=rabbitmq
+            - RABBITMQ_PORT=5672
+        volumes:
+            - ./../:/srv/php-queue
+        working_dir: /srv/php-queue
+        user: "${PUID:-1000}:${PGID:-1000}"
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+        restart: "no"

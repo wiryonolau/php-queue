@@ -8,11 +8,23 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Itseasy\Queue\Service\QueueService;
 use Exception;
 
-class QueueCommand extends Command
+class QueuePublishCommand extends Command
 {
-    protected static $defaultName = "queue";
+    protected static $defaultName = "queue:publish";
+    protected $queueService;
+
+    public function __construct(QueueService $queueService)
+    {
+        parent::__construct();
+        $this->queueService = $queueService;
+    }
+
+    protected function configure() : void
+    {
+    }
 
     public function execute(InputInterface $input, OutputInterface $output) : int
     {
