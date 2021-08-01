@@ -25,7 +25,7 @@ class QueueConsumeCommand extends Command
     protected function configure() : void
     {
         $this->addOption("queue", null, InputOption::VALUE_OPTIONAL, "Queue to consume");
-        $this->addOption("daemon", "d", InputOption::VALUE_OPTIONAL, "Run as daemon");
+        $this->addOption("daemon", "d", InputOption::VALUE_NONE, "Run as daemon");
         $this->addOption("timeout", "t", InputOption::VALUE_OPTIONAL, "Listen timeout in second");
         $this->addOption("option", "opt", InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, "Consume option key=val, pass the option multiple time for multiple option");
         $this->addOption("qoption", "qopt", InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, "Queue option key=val, pass the option multiple time for multiple option");
@@ -44,7 +44,7 @@ class QueueConsumeCommand extends Command
                 $queue = "default";
             }
             
-            if (is_null($queue) or !$queue) {
+            if (is_null($daemon)) {
                 $daemon = true;
             } else {
                 $daemon = boolval($daemon);
@@ -63,7 +63,8 @@ class QueueConsumeCommand extends Command
             }
 
             $qoptions = [
-                "queue" => $queue
+                "queue" => $queue,
+                "no_ack" => true
             ];
             foreach ($qopts as $qopt) {
                 list($k, $v) = explode("=", $qopt);
@@ -71,7 +72,7 @@ class QueueConsumeCommand extends Command
             }
 
             $this->queueService->create($qoptions);
-            $this->queueService->consume($queue, $options, $timeout);
+            $this->queueService->consume($queue, $options, $daemon, $timeout);
             return Command::SUCCESS;
         } catch (Exception $e) {
             $output->writeln($e->getMessage());

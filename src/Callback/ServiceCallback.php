@@ -15,8 +15,12 @@ class ServiceCallback implements QueueCallbackInterface
     }
 
     public function __invoke(AMQPMessage $message) {
-        $serviceMessage = ServiceMessage::decode($message->body);
-        $serviceMessage->run($this->container);
-        $message->ack();
+        try {
+            $serviceMessage = ServiceMessage::decode($message->body);
+            $serviceMessage->run($this->container);
+            $message->ack();
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
     }
 }
