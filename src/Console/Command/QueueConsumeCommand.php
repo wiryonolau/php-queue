@@ -24,7 +24,7 @@ class QueueConsumeCommand extends Command
 
     protected function configure() : void
     {
-        $this->addOption("queue", "q", InputOption::VALUE_OPTIONAL, "Queue to consume");
+        $this->addOption("queue", null, InputOption::VALUE_OPTIONAL, "Queue to consume");
         $this->addOption("timeout", "t", InputOption::VALUE_OPTIONAL, "Listen timeout in second");
         $this->addOption("option", "opt", InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, "Consume option key=val, pass the option multiple time for multiple option");
         $this->addOption("qoption", "qopt", InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, "Queue option key=val, pass the option multiple time for multiple option");

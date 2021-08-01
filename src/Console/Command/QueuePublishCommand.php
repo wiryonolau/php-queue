@@ -25,7 +25,7 @@ class QueuePublishCommand extends Command
 
     protected function configure() : void
     {
-        $this->addOption("queue", "q", InputOption::VALUE_OPTIONAL, "Queue to consume");
+        $this->addOption("queue", null, InputOption::VALUE_OPTIONAL, "Queue to consume");
         $this->addOption("service", null, InputOption::VALUE_REQUIRED, "Service name");
         $this->addOption("method", null, InputOption::VALUE_OPTIONAL, "Method name");
         $this->addOption("argument", "arg", InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, "Method arguments key=value, pass the option multiple time for multiple argument");
