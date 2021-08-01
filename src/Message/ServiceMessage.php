@@ -4,7 +4,7 @@ namespace Itseasy\Queue\Message;
 
 use Psr\Container\ContainerInterface;
 
-class ServiceMessage
+class ServiceMessage extends AbstractMessage
 {
     protected $service = null;
     protected $method = null;

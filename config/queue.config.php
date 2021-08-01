@@ -1,29 +1,20 @@
 <?php
 
+namespace Itseasy\Queue;
+
 return [
     "queue" => [
         "hosts" => [
             [
                 "host" => getenv("RABBITMQ_SERVER") ? :"localhost",
                 "port" => getenv("RABBITMQ_PORT") ? : 5672,
-                "user" => "guest",
-                "password" => "guest"
+                "user" => getenv("RABBITMQ_USER") ? : "guest",
+                "password" => getenv("RABBITMQ_PASSWORD") ? : "guest"
             ]
         ],
         "options" => [
         ],
-        "queue" => [
-            [
-                "queue" => "default" ,
-                "passive" => false,
-                "durable" => false,
-                "exclusive" => false,
-                "auto_delete" => true,
-                "nowait" => false,
-                "arguments"=> [],
-                "ticket" => null
-            ]
-        ],
+        "callback" => Callback\ServiceCallback::class,
         "set_close_on_destruct" => false
     ]
 ];

@@ -19,17 +19,24 @@ class QueueService
         $this->callback = $callback;
     }
 
-    public static function createMessage(ServiceMessage $data, array $options = []) : AMQPMessage
+    public function create(array $options = []) : void
     {
         $default = [
-            "delivery_mode" => 2
+            "queue" => "default" ,
+            "passive" => false,
+            "durable" => false,
+            "exclusive" => false,
+            "auto_delete" => true,
+            "nowait" => false,
+            "arguments"=> [],
+            "ticket" => null
         ];
-        $options = ArrayUtils::merge($default, $options);
 
-        return new AMQPMessage($data->encode(), $options);
+        $options = ArrayUtils::merge($default, $options);
+        call_user_func_array([$this->channel, "queue_declare"], $options);
     }
 
-    public function publish(AMQPMessage $message, array $options = [])
+    public function publish(string $queue_name = "default", AMQPMessage $message, array $message_options = [])
     {
         if ($this->channel->getConnection()->isConnected() === false) {
             $this->channel->getConnection()->connect();
@@ -38,14 +45,14 @@ class QueueService
         $default = [
             "message" => $message,
             "exchange" => "",
-            "routing_key" => "default",
+            "routing_key" => $queue_name,
             "mandatory" => false,
             "immediate" => false,
             "ticket" => null
         ];
 
-        $options = ArrayUtils::merge($default, $options);
-        call_user_func_array([$this->channel, "basic_publish"], $options);
+        $message_options = ArrayUtils::merge($default, $message_options);
+        call_user_func_array([$this->channel, "basic_publish"], $message_options);
     }
 
     public function consume(string $queue_name = "default", array $options = [], $timeout=0) {

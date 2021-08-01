@@ -18,17 +18,8 @@ class QueueServiceFactory
         $connection->set_close_on_destruct($queue_config["set_close_on_destruct"]);
 
         $channel = $connection->channel();
-        
-        foreach ($queue_config["queue"] as $q) {
-            call_user_func_array([$channel, "queue_declare"], $q);
-        }
+        $callback = $container->get($queue_config["callback"]);
 
-        $consume_callback = function($message) use ($container) {
-            $serviceMessage = ServiceMessage::decode($message->body);
-            $serviceMessage->run($container);
-            $message->ack();
-        };
-
-        return new QueueService($channel, $consume_callback);
+        return new QueueService($channel, $callback);
     }
 }

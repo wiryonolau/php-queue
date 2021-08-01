@@ -22,8 +22,11 @@ final class QueueTest extends TestCase
 
         $text = "this is the text";
         $serviceMessage = new ServiceMessage(Service\TestService::class, "test", [$text]);
-        
-        $queueService->publish($queueService::createMessage($serviceMessage));
+
+        $queueService->create();
+        $queueService->publish("default", $serviceMessage->getAMQPMessage());
+
+        // give time to publish before consume directly
         sleep(5);
         $queueService->consume("default", [], 10);
         $this->expectOutputString($text);

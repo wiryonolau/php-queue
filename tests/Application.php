@@ -74,7 +74,6 @@ class Application
     public function build() : void
     {
         $this->config = new Config($this->options["config_path"]);
-
         $containerBuilder = new DI\ContainerBuilder();
         if (!is_null($this->options["container_cache_path"])) {
             $containerBuilder->enableCompiliation($this->options["container_cache_path"]);
@@ -128,7 +127,7 @@ class Application
     {
         $this->addDefinition('Config', $this->config);
         $this->addDefinition('config', $this->config);
-    
+
         # Build Service
         if (!empty($this->getConfig()["service"]["factories"])) {
             foreach ($this->getConfig()["service"]["factories"] as $service => $factory) {

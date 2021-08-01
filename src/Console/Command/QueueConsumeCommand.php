@@ -9,12 +9,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Itseasy\Queue\Service\QueueService;
-use Itseasy\Queue\Message\ServiceMessage;
 use Exception;
 
-class QueuePublishCommand extends Command
+class QueueConsumeCommand extends Command
 {
-    protected static $defaultName = "queue:publish";
+    protected static $defaultName = "queue:consume";
     protected $queueService;
 
     public function __construct(QueueService $queueService)
@@ -26,9 +25,8 @@ class QueuePublishCommand extends Command
     protected function configure() : void
     {
         $this->addOption("queue", "q", InputOption::VALUE_OPTIONAL, "Queue to consume");
-        $this->addOption("service", null, InputOption::VALUE_REQUIRED, "Service name");
-        $this->addOption("method", null, InputOption::VALUE_OPTIONAL, "Method name");
-        $this->addOption("argument", "arg", InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, "Method arguments key=value, pass the option multiple time for multiple argument");
+        $this->addOption("timeout", "t", InputOption::VALUE_OPTIONAL, "Listen timeout in second");
+        $this->addOption("option", "opt", InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, "Consume option key=val, pass the option multiple time for multiple option");
         $this->addOption("qoption", "qopt", InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, "Queue option key=val, pass the option multiple time for multiple option");
     }
 
@@ -36,23 +34,22 @@ class QueuePublishCommand extends Command
     {
         try {
             $queue = $input->getOption("queue");
-            $service = $input->getOption("service");
-            $method = $input->getOption("method");
-            $args = $input->getOption("argument");
-            $qopts = $input->getOptions("qoption");
+            $opts = $input->getOption("option");
+            $timeout = $input->getOption("timeout");
+            $qopts = $input->getOption("qoption");
 
             if (is_null($queue) or !$queue) {
                 $queue = "default";
             }
 
-            if (is_null($service) or !$service) {
-                throw new Exception("Service must be defined");
+            if (is_null($timeout) or !$timeout) {
+                $timeout = 0;
             }
 
-            $arguments = [];
-            foreach ($args as $arg) {
-                list($k, $v) = explode("=", $arg);
-                $arguments[$k] = $v;
+            $options = []
+            foreach ($opts as $opt) {
+                list($k, $v) = explode("=", $opt);
+                $options[$k] = $v;
             }
 
             $qoptions = [
@@ -63,13 +60,10 @@ class QueuePublishCommand extends Command
                 $qoptions[$k] = $v;
             }
 
-            $message = new ServiceMessage($service, $method, $arguments);
-
             $queueService->create($qoptions);
-            $queueService->publish($queue, $message->getAMQPMessage());
+            $this->queueService->consume($queue, $options, $timeout);
             return Command::SUCCESS;
         } catch (Exception $e) {
-            $output->writeln($e->getMesssage());
             return Command::FAILURE;
         }
     }
