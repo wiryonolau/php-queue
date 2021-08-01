@@ -8,6 +8,7 @@ use PhpAmqpLib\Connection\AMQPStreamConnection;
 use Psr\Container\ContainerInterface;
 use Itseasy\Queue\Message\ServiceMessage;
 use PhpAmqpLib\Exception\AMQPIOException;
+use Exception;
 
 class QueueServiceFactory
 {
@@ -21,7 +22,10 @@ class QueueServiceFactory
 
             $channel = $connection->channel();
             $callback = $container->get($queue_config["callback"]);
-        } catch (AMQPIOException $e) {
+        } catch (AMQPIOException $ampqe) {
+            $channel = null;
+            $callback = null;
+        } catch (Exception $e) {
             $channel = null;
             $callback = null;
         }

@@ -3,6 +3,7 @@
 namespace Itseasy\Queue\Message;
 
 use Psr\Container\ContainerInterface;
+use Exception;
 
 class ServiceMessage extends AbstractMessage
 {

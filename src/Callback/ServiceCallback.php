@@ -5,6 +5,7 @@ namespace Itseasy\Queue\Callback;
 use Psr\Container\ContainerInterface;
 use PhpAmqpLib\Message\AMQPMessage;
 use Itseasy\Queue\Message\ServiceMessage;
+use Exception;
 
 class ServiceCallback implements QueueCallbackInterface
 {
@@ -18,9 +19,10 @@ class ServiceCallback implements QueueCallbackInterface
         try {
             $serviceMessage = ServiceMessage::decode($message->body);
             $serviceMessage->run($this->container);
-            $message->ack();
         } catch (Exception $e) {
             echo $e->getMessage();
+        } finally {
+            $message->ack();
         }
     }
 }
