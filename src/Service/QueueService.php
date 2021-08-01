@@ -13,7 +13,7 @@ class QueueService
     protected $queue;
     protected $callback;
 
-    public function __construct(AMQPChannel $channel, $callback = null)
+    public function __construct(?AMQPChannel $channel = null, $callback = null)
     {
         $this->channel = $channel;
         $this->callback = $callback;
@@ -21,6 +21,10 @@ class QueueService
 
     public function create(array $options = []) : void
     {
+        if (is_null($this->channel)) {
+            throw new Exception("Not connected to AMQP Server");
+        }
+
         $default = [
             "queue" => "default" ,
             "passive" => false,
@@ -38,6 +42,10 @@ class QueueService
 
     public function publish(string $queue_name = "default", AMQPMessage $message, array $message_options = [])
     {
+        if (is_null($this->channel)) {
+            throw new Exception("Not connected to AMQP Server");
+        }
+
         if ($this->channel->getConnection()->isConnected() === false) {
             $this->channel->getConnection()->connect();
         }
@@ -56,6 +64,10 @@ class QueueService
     }
 
     public function consume(string $queue_name = "default", array $options = [], $timeout=0) {
+        if (is_null($this->channel)) {
+            throw new Exception("Not connected to AMQP Server");
+        }
+
         if ($this->channel->getConnection()->isConnected() === false) {
             $this->channel->getConnection()->connect();
         }
@@ -80,6 +92,10 @@ class QueueService
     }
 
     public function close() {
+        if (is_null($this->channel)) {
+            throw new Exception("Not connected to AMQP Server");
+        }
+
         $this->channel->close();
         $this->channel->getConnection()->close();
     }
