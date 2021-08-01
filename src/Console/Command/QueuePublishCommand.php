@@ -69,7 +69,7 @@ class QueuePublishCommand extends Command
             $queueService->publish($queue, $message->getAMQPMessage());
             return Command::SUCCESS;
         } catch (Exception $e) {
-            $output->writeln($e->getMesssage());
+            $output->writeln($e->getMessage());
             return Command::FAILURE;
         }
     }

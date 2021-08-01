@@ -64,6 +64,7 @@ class QueueConsumeCommand extends Command
             $this->queueService->consume($queue, $options, $timeout);
             return Command::SUCCESS;
         } catch (Exception $e) {
+            $output->writeln($e->getMessage());
             return Command::FAILURE;
         }
     }
