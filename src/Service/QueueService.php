@@ -6,6 +6,7 @@ use Itseasy\Queue\Message\ServiceMessage;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
 use Laminas\Stdlib\ArrayUtils;
+use Exception;
 
 class QueueService
 {

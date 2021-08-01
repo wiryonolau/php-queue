@@ -39,7 +39,7 @@ class QueuePublishCommand extends Command
             $service = $input->getOption("service");
             $method = $input->getOption("method");
             $args = $input->getOption("argument");
-            $qopts = $input->getOptions("qoption");
+            $qopts = $input->getOption("qoption");
 
             if (is_null($queue) or !$queue) {
                 $queue = "default";
@@ -65,8 +65,8 @@ class QueuePublishCommand extends Command
 
             $message = new ServiceMessage($service, $method, $arguments);
 
-            $queueService->create($qoptions);
-            $queueService->publish($queue, $message->getAMQPMessage());
+            $this->queueService->create($qoptions);
+            $this->queueService->publish($queue, $message->getAMQPMessage());
             return Command::SUCCESS;
         } catch (Exception $e) {
             $output->writeln($e->getMessage());

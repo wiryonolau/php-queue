@@ -22,7 +22,7 @@ class ServiceMessage extends AbstractMessage
         $this->service = $service;
     }
 
-    public function setMethod(string $method) : void
+    public function setMethod(?string $method = null) : void
     {
         $this->method = $method;
     }

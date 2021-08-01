@@ -60,7 +60,7 @@ class QueueConsumeCommand extends Command
                 $qoptions[$k] = $v;
             }
 
-            $queueService->create($qoptions);
+            $this->queueService->create($qoptions);
             $this->queueService->consume($queue, $options, $timeout);
             return Command::SUCCESS;
         } catch (Exception $e) {
