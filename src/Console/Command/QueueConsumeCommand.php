@@ -46,7 +46,7 @@ class QueueConsumeCommand extends Command
                 $timeout = 0;
             }
 
-            $options = []
+            $options = [];
             foreach ($opts as $opt) {
                 list($k, $v) = explode("=", $opt);
                 $options[$k] = $v;
