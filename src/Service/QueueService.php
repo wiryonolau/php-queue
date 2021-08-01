@@ -64,7 +64,7 @@ class QueueService
         call_user_func_array([$this->channel, "basic_publish"], $message_options);
     }
 
-    public function consume(string $queue_name = "default", array $options = [], $timeout=0) {
+    public function consume(string $queue_name = "default", array $options = [], bool $daemon = true, int $timeout = 0) {
         if (is_null($this->channel)) {
             throw new Exception("Not connected to AMQP Server");
         }
@@ -89,7 +89,14 @@ class QueueService
 
         $this->channel->basic_qos(null, 1, null);
         call_user_func_array([$this->channel, "basic_consume"], $options);
-        $this->channel->wait(null, false, $timeout);
+
+        if ($daemon) {
+            while($this->channel->is_open()) {
+                $this->channel->wait(null, false, $timeout);
+            }
+        } else { 
+            $this->channel->wait(null, false, $timeout);
+        }
     }
 
     public function close() {

@@ -25,6 +25,7 @@ class QueueConsumeCommand extends Command
     protected function configure() : void
     {
         $this->addOption("queue", null, InputOption::VALUE_OPTIONAL, "Queue to consume");
+        $this->addOption("daemon", "d", InputOption::VALUE_OPTIONAL, "Run as daemon");
         $this->addOption("timeout", "t", InputOption::VALUE_OPTIONAL, "Listen timeout in second");
         $this->addOption("option", "opt", InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, "Consume option key=val, pass the option multiple time for multiple option");
         $this->addOption("qoption", "qopt", InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, "Queue option key=val, pass the option multiple time for multiple option");
@@ -35,15 +36,24 @@ class QueueConsumeCommand extends Command
         try {
             $queue = $input->getOption("queue");
             $opts = $input->getOption("option");
+            $daemon = $input->getOption("daemon");
             $timeout = $input->getOption("timeout");
             $qopts = $input->getOption("qoption");
 
             if (is_null($queue) or !$queue) {
                 $queue = "default";
             }
+            
+            if (is_null($queue) or !$queue) {
+                $daemon = true;
+            } else {
+                $daemon = boolval($daemon);
+            }
 
             if (is_null($timeout) or !$timeout) {
                 $timeout = 0;
+            } else {
+                $timeout = intval($timeout);
             }
 
             $options = [];

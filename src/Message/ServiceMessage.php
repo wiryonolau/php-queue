@@ -46,14 +46,18 @@ class ServiceMessage extends AbstractMessage
         ]));
     }
 
-    public function run(ContainerInterface $container)
+    public function run(ContainerInterface $container) : void
     {
-        $service = $container->get($this->service);
-        if (is_null($this->method)) {
-            // invoke
-            call_user_func_array($service, $this->arguments);
+        try {
+            $service = $container->get($this->service);
+            if (is_null($this->method)) {
+                // invoke
+                call_user_func_array($service, $this->arguments);
+            }
+            call_user_func_array([$service, $this->method], $this->arguments);
+        } catch (Exception $e) {
+            echo $e->getMessage();
         }
-        call_user_func_array([$service, $this->method], $this->arguments);
     }
 
     public static function decode(string $value) : ServiceMessage

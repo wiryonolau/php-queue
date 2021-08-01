@@ -28,7 +28,7 @@ final class QueueTest extends TestCase
 
         // give time to publish before consume directly
         sleep(5);
-        $queueService->consume("default", [], 10);
+        $queueService->consume("default", [], false, 10);
         $this->expectOutputString($text);
     }
 }
