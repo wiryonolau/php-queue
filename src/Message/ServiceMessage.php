@@ -38,6 +38,21 @@ class ServiceMessage extends AbstractMessage
         $this->arguments = $arguments;
     }
 
+    public function getService() : string
+    {
+        return $this->service;
+    }
+
+    public function getMethod() : ?string
+    {
+        return $this->method;
+    }
+
+    public function getArguments() : ?array
+    {
+        return $this->arguments;
+    }
+
     public function encode() : string
     {
         return base64_encode(json_encode([
@@ -64,8 +79,13 @@ class ServiceMessage extends AbstractMessage
     public static function decode(string $value) : ServiceMessage
     {
         $value = base64_decode($value);
-        $value = json_decode($value);
+        $value = json_decode($value, true);
 
-        return new ServiceMessage($value->service, $value->method, $value->arguments);
+        return new ServiceMessage($value["service"], $value["method"], $value["arguments"]);
+    }
+
+    public function __toString() : string
+    {
+        return sprintf("Service : %s, Method : %s, Arguments : %s", $this->service, $this->method, print_r($this->arguments, true));
     }
 }
