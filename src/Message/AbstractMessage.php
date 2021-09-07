@@ -4,11 +4,15 @@ namespace Itseasy\Queue\Message;
 
 use PhpAmqpLib\Message\AMQPMessage;
 use Laminas\Stdlib\ArrayUtils;
+use Laminas\Log\LoggerAwareInterface;
+use Laminas\Log\LoggerAwareTrait;
 
-abstract class AbstractMessage
+abstract class AbstractMessage implements LoggerAwareInterface
 {
     abstract function encode() : string;
     abstract static function decode(string $value);
+
+    use LoggerAwareTrait;
 
     public function getAMQPMessage(array $options = []) : AMQPMessage
     {

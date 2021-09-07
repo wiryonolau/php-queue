@@ -6,37 +6,33 @@ use Psr\Container\ContainerInterface;
 use PhpAmqpLib\Message\AMQPMessage;
 use Itseasy\Queue\Message\ServiceMessage;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
+use Laminas\Log\LoggerAwareInterface;
+use Laminas\Log\LoggerAwareTrait;
 use Exception;
 
-class ServiceCallback implements QueueCallbackInterface
+class ServiceCallback implements QueueCallbackInterface, LoggerAwareInterface
 {
-    private $container;
-    private $output = null;
+    use LoggerAwareTrait;
 
-    public function __construct(ContainerInterface $container, ?ConsoleOutputInterface $output = null) {
+    private $container;
+
+    public function __construct(ContainerInterface $container)
+    {
         $this->container = $container;
-        $this->output = $output;
     }
 
-    public function __invoke(AMQPMessage $message) {
+    public function __invoke(AMQPMessage $message)
+    {
         try {
             $serviceMessage = ServiceMessage::decode($message->body);
-            $this->writeln("Receive ".$serviceMessage);
+            $serviceMessage->setLogger($this->getLogger());
+            $this->logger->info("Receive ".$serviceMessage);
             $serviceMessage->run($this->container);
         } catch (Exception $e) {
-            $this->writeln($e->getMessage());
+            $this->logger->debug($e->getMessage());
         } finally {
-            $this->writeln("Done");
+            $this->logger->info("Done");
             $message->ack();
         }
-    }
-
-    private function writeln(string $message) {
-        if (is_null($this->output)) {
-            echo $message;
-        } else {
-            $this->output->writeln($message);
-        }
-
     }
 }

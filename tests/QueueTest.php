@@ -13,7 +13,7 @@ final class QueueTest extends TestCase
             "config_path" => [
                 __DIR__."/../config/*.config.php",
                 __DIR__."/config/*.config.php"
-            ]
+            ],
         ]);
         $app->build();
 

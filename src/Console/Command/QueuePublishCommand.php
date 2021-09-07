@@ -10,10 +10,14 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Itseasy\Queue\Service\QueueService;
 use Itseasy\Queue\Message\ServiceMessage;
+use Laminas\Log\LoggerAwareInterface;
+use Laminas\Log\LoggerAwareTrait;
 use Exception;
 
-class QueuePublishCommand extends Command
+class QueuePublishCommand extends Command implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     protected static $defaultName = "queue:publish";
     protected $queueService;
 
@@ -65,10 +69,14 @@ class QueuePublishCommand extends Command
 
             $message = new ServiceMessage($service, $method, $arguments);
 
+            $this->logger->info("Publish to ".$queue);
+            $output->writeln("Publish to ".$queue);
+
             $this->queueService->create($qoptions);
             $this->queueService->publish($queue, $message->getAMQPMessage());
             return Command::SUCCESS;
         } catch (Exception $e) {
+            $this->logger->debug($e->getMessage());
             $output->writeln($e->getMessage());
             return Command::FAILURE;
         }

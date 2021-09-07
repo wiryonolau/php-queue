@@ -8,6 +8,7 @@ use PhpAmqpLib\Connection\AMQPStreamConnection;
 use Psr\Container\ContainerInterface;
 use Itseasy\Queue\Message\ServiceMessage;
 use PhpAmqpLib\Exception\AMQPIOException;
+use Itseasy\Queue\Logger\DefaultLogger;
 use Exception;
 
 class QueueServiceFactory
@@ -19,7 +20,6 @@ class QueueServiceFactory
         try {
             $connection = AMQPStreamConnection::create_connection($queue_config["hosts"], $queue_config["options"]);
             $connection->set_close_on_destruct($queue_config["set_close_on_destruct"]);
-
             $channel = $connection->channel();
             $callback = $container->get($queue_config["callback"]);
         } catch (AMQPIOException $ampqe) {
@@ -30,6 +30,9 @@ class QueueServiceFactory
             $callback = null;
         }
 
-        return new QueueService($channel, $callback);
+        $queueService = new QueueService($channel, $callback);
+        $queueService->setLogger($container->get(DefaultLogger::class));
+
+        return $queueService;
     }
 }

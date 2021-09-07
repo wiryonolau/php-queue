@@ -9,10 +9,14 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Itseasy\Queue\Service\QueueService;
+use Laminas\Log\LoggerAwareInterface;
+use Laminas\Log\LoggerAwareTrait;
 use Exception;
 
-class QueueConsumeCommand extends Command
+class QueueConsumeCommand extends Command implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     protected static $defaultName = "queue:consume";
     protected $queueService;
 
@@ -43,7 +47,7 @@ class QueueConsumeCommand extends Command
             if (is_null($queue) or !$queue) {
                 $queue = "default";
             }
-            
+
             if (is_null($daemon)) {
                 $daemon = true;
             } else {
@@ -71,10 +75,14 @@ class QueueConsumeCommand extends Command
                 $qoptions[$k] = $v;
             }
 
+            $this->logger->info("Consuming ".$queue);
+            $output->writeln("Consuming ".$queue);
+            
             $this->queueService->create($qoptions);
             $this->queueService->consume($queue, $options, $daemon, $timeout);
             return Command::SUCCESS;
         } catch (Exception $e) {
+            $this->logger->debug($e->getMessage());
             $output->writeln($e->getMessage());
             return Command::FAILURE;
         }

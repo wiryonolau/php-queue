@@ -72,7 +72,7 @@ class ServiceMessage extends AbstractMessage
             }
             call_user_func_array([$service, $this->method], $this->arguments);
         } catch (Exception $e) {
-            echo $e->getMessage();
+            $this->logger->debug($e->getMessage());
         }
     }
 

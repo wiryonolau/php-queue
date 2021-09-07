@@ -22,7 +22,7 @@ class Application
         "console" => [
             "name" => "",
             "version" => ""
-        ]
+        ],
     ];
 
     public function __construct(array $options = [])

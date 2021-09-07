@@ -5,7 +5,8 @@ ini_set('display_startup_errors', '1');
 
 require __DIR__ .'/../vendor/autoload.php';
 
-function debug($output) {
+function debug($output)
+{
     print_r($output);
     ob_flush();
 }
