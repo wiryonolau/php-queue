@@ -3,13 +3,14 @@ declare(strict_types = 1);
 
 namespace Itseasy\Queue\Service\Factory;
 
+use Exception;
+use Itseasy\Queue\Logger\DefaultLogger;
+use Itseasy\Queue\Message\ServiceMessage;
 use Itseasy\Queue\Service\QueueService;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
-use Psr\Container\ContainerInterface;
-use Itseasy\Queue\Message\ServiceMessage;
 use PhpAmqpLib\Exception\AMQPIOException;
-use Itseasy\Queue\Logger\DefaultLogger;
-use Exception;
+use PhpAmqpLib\Exception\AMQPTimeoutException;
+use Psr\Container\ContainerInterface;
 
 class QueueServiceFactory
 {
@@ -32,6 +33,10 @@ class QueueServiceFactory
 
         $queueService = new QueueService($channel, $callback);
         $queueService->setLogger($container->get(DefaultLogger::class));
+
+        foreach ($queue_config["channels"] as $channel_config) {
+            $queueService->create($channel_config);
+        }
 
         return $queueService;
     }

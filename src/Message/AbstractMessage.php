@@ -17,7 +17,7 @@ abstract class AbstractMessage implements LoggerAwareInterface
     public function getAMQPMessage(array $options = []) : AMQPMessage
     {
         $default = [
-            "delivery_mode" => 2
+            "delivery_mode" => AMQPMessage::DELIVERY_MODE_PERSISTENT
         ];
         $options = ArrayUtils::merge($default, $options);
         return new AMQPMessage($this->encode(), $options);

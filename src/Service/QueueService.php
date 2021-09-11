@@ -43,7 +43,13 @@ class QueueService implements LoggerAwareInterface
         ];
 
         $options = ArrayUtils::merge($default, $options);
-        call_user_func_array([$this->channel, "queue_declare"], $options);
+
+        try {
+            call_user_func_array([$this->channel, "queue_declare"], $options);
+            $this->logger->info(sprintf("Creating queue channel \"%s\" success", $options["queue"]));
+        } catch (AMQPTimeoutException $ate) {
+            $this->logger->debug(sprintf("Creating queue channel \"%s\" failed", $options["queue"]));
+        }
     }
 
     public function publish(string $queue_name = "default", AMQPMessage $message, array $message_options = [])
