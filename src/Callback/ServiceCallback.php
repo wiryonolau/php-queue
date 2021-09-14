@@ -9,6 +9,7 @@ use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
 use Exception;
+use Throwable;
 
 class ServiceCallback implements QueueCallbackInterface, LoggerAwareInterface
 {
@@ -28,8 +29,8 @@ class ServiceCallback implements QueueCallbackInterface, LoggerAwareInterface
             $serviceMessage->setLogger($this->getLogger());
             $this->logger->info("Receive ".$serviceMessage);
             $serviceMessage->run($this->container);
-        } catch (Exception $e) {
-            $this->logger->debug($e->getMessage());
+        } catch (Throwable $t) {
+            $this->logger->debug($t->getMessage());
         } finally {
             $this->logger->info("Done");
             $message->ack();

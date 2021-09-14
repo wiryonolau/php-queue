@@ -4,6 +4,7 @@ namespace Itseasy\Queue\Message;
 
 use Psr\Container\ContainerInterface;
 use Exception;
+use Throwable;
 
 class ServiceMessage extends AbstractMessage
 {
@@ -71,8 +72,8 @@ class ServiceMessage extends AbstractMessage
                 call_user_func_array($service, $this->arguments);
             }
             call_user_func_array([$service, $this->method], $this->arguments);
-        } catch (Exception $e) {
-            $this->logger->debug($e->getMessage());
+        } catch (Throwable $t) {
+            $this->logger->debug($t->getMessage());
         }
     }
 
