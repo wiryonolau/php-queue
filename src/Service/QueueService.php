@@ -5,32 +5,28 @@ namespace Itseasy\Queue\Service;
 use Itseasy\Queue\Message\ServiceMessage;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
+use PhpAmqpLib\Connection\AbstractConnection;
 use Laminas\Stdlib\ArrayUtils;
 use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
 use Exception;
+use Throwable;
 
 class QueueService implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    protected $channel;
-    protected $queue;
+    protected $connection;
     protected $callback;
 
-    public function __construct(?AMQPChannel $channel = null, $callback = null)
+    public function __construct(AbstractConnection $connection, $callback = null)
     {
-        $this->channel = $channel;
+        $this->connection = $connection;
         $this->callback = $callback;
     }
 
     public function create(array $options = []) : void
     {
-        if (is_null($this->channel)) {
-            $this->logger->debug("Not connected to AMQP Server");
-            throw new Exception("Not connected to AMQP Server");
-        }
-
         $default = [
             "queue" => "default" ,
             "passive" => false,
@@ -45,22 +41,17 @@ class QueueService implements LoggerAwareInterface
         $options = ArrayUtils::merge($default, $options);
 
         try {
-            call_user_func_array([$this->channel, "queue_declare"], $options);
+            call_user_func_array([$this->connection->channel(), "queue_declare"], $options);
             $this->logger->info(sprintf("Creating queue channel \"%s\" success", $options["queue"]));
-        } catch (AMQPTimeoutException $ate) {
+        } catch (Throwable $t) {
             $this->logger->debug(sprintf("Creating queue channel \"%s\" failed", $options["queue"]));
         }
     }
 
     public function publish(string $queue_name = "default", AMQPMessage $message, array $message_options = [])
     {
-        if (is_null($this->channel)) {
-            $this->logger->debug("Not connected to AMQP Server");
-            throw new Exception("Not connected to AMQP Server");
-        }
-
-        if ($this->channel->getConnection()->isConnected() === false) {
-            $this->channel->getConnection()->connect();
+        if ($this->connection->isConnected() === false) {
+            $this->connection->connect();
         }
 
         $default = [
@@ -73,18 +64,13 @@ class QueueService implements LoggerAwareInterface
         ];
 
         $message_options = ArrayUtils::merge($default, $message_options);
-        call_user_func_array([$this->channel, "basic_publish"], $message_options);
+        call_user_func_array([$this->connection->channel(), "basic_publish"], $message_options);
     }
 
     public function consume(string $queue_name = "default", array $options = [], bool $daemon = true, int $timeout = 0)
     {
-        if (is_null($this->channel)) {
-            $this->logger->debug("Not connected to AMQP Server");
-            throw new Exception("Not connected to AMQP Server");
-        }
-
-        if ($this->channel->getConnection()->isConnected() === false) {
-            $this->channel->getConnection()->connect();
+        if ($this->connection->isConnected() === false) {
+            $this->connection->connect();
         }
 
         $default = [
@@ -101,26 +87,22 @@ class QueueService implements LoggerAwareInterface
 
         $options = ArrayUtils::merge($default, $options);
 
-        $this->channel->basic_qos(null, 1, null);
-        call_user_func_array([$this->channel, "basic_consume"], $options);
+        $channel = $this->connection->channel();
+        $channel->basic_qos(null, 1, null);
+
+        call_user_func_array([$channel, "basic_consume"], $options);
 
         if ($daemon) {
-            while ($this->channel->is_open()) {
-                $this->channel->wait(null, false, $timeout);
+            while ($channel->is_open()) {
+                $channel->wait(null, false, $timeout);
             }
         } else {
-            $this->channel->wait(null, false, $timeout);
+            $channel->wait(null, false, $timeout);
         }
     }
 
     public function close()
     {
-        if (is_null($this->channel)) {
-            $this->logger->debug("Not connected to AMQP Server");
-            throw new Exception("Not connected to AMQP Server");
-        }
-
-        $this->channel->close();
-        $this->channel->getConnection()->close();
+        $this->connection->close();
     }
 }

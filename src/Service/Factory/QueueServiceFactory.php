@@ -21,17 +21,14 @@ class QueueServiceFactory
         try {
             $connection = AMQPStreamConnection::create_connection($queue_config["hosts"], $queue_config["options"]);
             $connection->set_close_on_destruct($queue_config["set_close_on_destruct"]);
-            $channel = $connection->channel();
             $callback = $container->get($queue_config["callback"]);
         } catch (AMQPIOException $ampqe) {
-            $channel = null;
             $callback = null;
         } catch (Exception $e) {
-            $channel = null;
             $callback = null;
         }
 
-        $queueService = new QueueService($channel, $callback);
+        $queueService = new QueueService($connection, $callback);
         $queueService->setLogger($container->get(DefaultLogger::class));
 
         foreach ($queue_config["channels"] as $channel_config) {
