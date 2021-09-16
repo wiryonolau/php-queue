@@ -42,7 +42,6 @@ class QueueService implements LoggerAwareInterface
 
         try {
             call_user_func_array([$this->connection->channel(), "queue_declare"], $options);
-            $this->logger->info(sprintf("Creating queue channel \"%s\" success", $options["queue"]));
         } catch (Throwable $t) {
             $this->logger->debug(sprintf("Creating queue channel \"%s\" failed", $options["queue"]));
         }

@@ -29,7 +29,9 @@ class QueueServiceFactory
         }
 
         $queueService = new QueueService($connection, $callback);
-        $queueService->setLogger($container->get(DefaultLogger::class));
+
+        $logger = ($container->has("Logger") ? $container->get("Logger") : $container->get(DefaultLogger::class));
+        $queueService->setLogger($logger);
 
         foreach ($queue_config["channels"] as $channel_config) {
             $queueService->create($channel_config);

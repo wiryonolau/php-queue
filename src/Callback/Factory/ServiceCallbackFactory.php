@@ -12,7 +12,9 @@ class ServiceCallbackFactory
     {
         $serviceCallback = new ServiceCallback($container);
 
-        $serviceCallback->setLogger($container->get(DefaultLogger::class));
+        $logger = ($container->has("Logger") ? $container->get("Logger") : $container->get(DefaultLogger::class));
+        $serviceCallback->setLogger($logger);
+        
         return $serviceCallback;
     }
 }
