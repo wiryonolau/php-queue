@@ -19,7 +19,7 @@ class QueueService implements LoggerAwareInterface
     protected $connection;
     protected $callback;
 
-    public function __construct(AbstractConnection $connection, $callback = null)
+    public function __construct(?AbstractConnection $connection = null, $callback = null)
     {
         $this->connection = $connection;
         $this->callback = $callback;
@@ -47,56 +47,68 @@ class QueueService implements LoggerAwareInterface
         }
     }
 
-    public function publish(string $queue_name = "default", AMQPMessage $message, array $message_options = [])
+    public function publish(string $queue_name = "default", AMQPMessage $message, array $message_options = []) : bool
     {
-        if ($this->connection->isConnected() === false) {
-            $this->connection->connect();
+        try {
+            if ($this->connection->isConnected() === false) {
+                $this->connection->connect();
+            }
+
+            $default = [
+                "message" => $message,
+                "exchange" => "",
+                "routing_key" => $queue_name,
+                "mandatory" => false,
+                "immediate" => false,
+                "ticket" => null
+            ];
+
+            $message_options = ArrayUtils::merge($default, $message_options);
+            call_user_func_array([$this->connection->channel(), "basic_publish"], $message_options);
+            return true;
+        } catch (Throwable $t) {
+            $this->logger->debug(sprintf("Publish message failed"));
+            $this->logger->debug(sprintf($t->getMessage()));
+            return false;
         }
-
-        $default = [
-            "message" => $message,
-            "exchange" => "",
-            "routing_key" => $queue_name,
-            "mandatory" => false,
-            "immediate" => false,
-            "ticket" => null
-        ];
-
-        $message_options = ArrayUtils::merge($default, $message_options);
-        call_user_func_array([$this->connection->channel(), "basic_publish"], $message_options);
     }
 
-    public function consume(string $queue_name = "default", array $options = [], bool $daemon = true, int $timeout = 0)
+    public function consume(string $queue_name = "default", array $options = [], bool $daemon = true, int $timeout = 0) : void
     {
-        if ($this->connection->isConnected() === false) {
-            $this->connection->connect();
-        }
+        try {
+            if ($this->connection->isConnected() === false) {
+                $this->connection->connect();
+            }
 
-        $default = [
-            "queue" => $queue_name,
-            "consumer_tag" => "",
-            "no_local" => false,
-            "no_ack" => false,
-            "exclusive" => false,
-            "nowait"=> false,
-            "callback" => $this->callback,
-            "ticket" =>  null,
-            "arguments" => []
-        ];
+            $default = [
+                "queue" => $queue_name,
+                "consumer_tag" => "",
+                "no_local" => false,
+                "no_ack" => false,
+                "exclusive" => false,
+                "nowait"=> false,
+                "callback" => $this->callback,
+                "ticket" =>  null,
+                "arguments" => []
+            ];
 
-        $options = ArrayUtils::merge($default, $options);
+            $options = ArrayUtils::merge($default, $options);
 
-        $channel = $this->connection->channel();
-        $channel->basic_qos(null, 1, null);
+            $channel = $this->connection->channel();
+            $channel->basic_qos(null, 1, null);
 
-        call_user_func_array([$channel, "basic_consume"], $options);
+            call_user_func_array([$channel, "basic_consume"], $options);
 
-        if ($daemon) {
-            while ($channel->is_open()) {
+            if ($daemon) {
+                while ($channel->is_open()) {
+                    $channel->wait(null, false, $timeout);
+                }
+            } else {
                 $channel->wait(null, false, $timeout);
             }
-        } else {
-            $channel->wait(null, false, $timeout);
+        } catch (Throwable $t) {
+            $this->logger->debug(sprintf("Consumer failed to start"));
+            $this->logger->debug(sprintf($t->getMessage()));
         }
     }
 

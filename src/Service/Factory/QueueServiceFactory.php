@@ -17,20 +17,21 @@ class QueueServiceFactory
     public function __invoke(ContainerInterface $container) : QueueService
     {
         $queue_config = $container->get("Config")->getConfig()["queue"];
+        $callback = $container->get($queue_config["callback"]);
+        $logger = ($container->has("Logger") ? $container->get("Logger") : $container->get(DefaultLogger::class));
+
+        $connection = null;
 
         try {
             $connection = AMQPStreamConnection::create_connection($queue_config["hosts"], $queue_config["options"]);
             $connection->set_close_on_destruct($queue_config["set_close_on_destruct"]);
-            $callback = $container->get($queue_config["callback"]);
         } catch (AMQPIOException $ampqe) {
-            $callback = null;
+            $logger->debug(sprintf("Server not ready - %s", $ampqe->getMessage()));
         } catch (Exception $e) {
-            $callback = null;
+            $logger->debug(sprintf("Server not ready - %s", $e->getMessage())); 
         }
 
         $queueService = new QueueService($connection, $callback);
-
-        $logger = ($container->has("Logger") ? $container->get("Logger") : $container->get(DefaultLogger::class));
         $queueService->setLogger($logger);
 
         foreach ($queue_config["channels"] as $channel_config) {

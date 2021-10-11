@@ -11,7 +11,7 @@ final class QueueTest extends TestCase
     public function testQueue()
     {
         // Test will timeout
-        $this->expectException(AMQPTimeoutException::class);
+        // $this->expectException(AMQPTimeoutException::class);
 
         $app = new Application([
             "config_path" => [
@@ -27,8 +27,10 @@ final class QueueTest extends TestCase
 
         $messages = [
             ["method" => "test", "text" => "this is the text\n"],
+            ["method" => "testThrowable", "text" => "last text\n"],
+            ["method" => "testNotDefinedArray", "text" => "test not defined array\n"],
+            ["method" => "testNotArray", "text" => "test not array\n"],
             ["method" => "test", "text" => "another text\n"],
-            ["method" => "testThrowable", "text" => "last text\n"]
         ];
 
         foreach ($messages as $method => $message) {
