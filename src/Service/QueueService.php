@@ -19,8 +19,10 @@ class QueueService implements LoggerAwareInterface
     protected $connection;
     protected $callback;
 
-    public function __construct(?AbstractConnection $connection = null, $callback = null)
-    {
+    public function __construct(
+        ?AbstractConnection $connection = null,
+        $callback = null
+    ) {
         $this->connection = $connection;
         $this->callback = $callback;
     }
@@ -41,14 +43,21 @@ class QueueService implements LoggerAwareInterface
         $options = ArrayUtils::merge($default, $options);
 
         try {
-            call_user_func_array([$this->connection->channel(), "queue_declare"], $options);
+            call_user_func_array([$this->connection->channel(),
+            "queue_declare"], $options);
         } catch (Throwable $t) {
-            $this->logger->debug(sprintf("Creating queue channel \"%s\" failed", $options["queue"]));
+            $this->logger->debug(sprintf(
+                "Creating queue channel \"%s\" failed",
+                $options["queue"]
+            ));
         }
     }
 
-    public function publish(string $queue_name = "default", AMQPMessage $message, array $message_options = []) : bool
-    {
+    public function publish(
+        string $queue_name = "default",
+        AMQPMessage $message,
+        array $message_options = []
+    ) : bool {
         try {
             if ($this->connection->isConnected() === false) {
                 $this->connection->connect();
@@ -64,7 +73,10 @@ class QueueService implements LoggerAwareInterface
             ];
 
             $message_options = ArrayUtils::merge($default, $message_options);
-            call_user_func_array([$this->connection->channel(), "basic_publish"], $message_options);
+            call_user_func_array(
+                [$this->connection->channel(), "basic_publish"],
+                $message_options
+            );
             return true;
         } catch (Throwable $t) {
             $this->logger->debug(sprintf("Publish message failed"));
@@ -73,8 +85,12 @@ class QueueService implements LoggerAwareInterface
         }
     }
 
-    public function consume(string $queue_name = "default", array $options = [], bool $daemon = true, int $timeout = 0) : void
-    {
+    public function consume(
+        string $queue_name = "default",
+        array $options = [],
+        bool $daemon = true,
+        int $timeout = 0
+    ) : void {
         try {
             if ($this->connection->isConnected() === false) {
                 $this->connection->connect();

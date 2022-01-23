@@ -12,8 +12,11 @@ class ServiceMessage extends AbstractMessage
     protected $method = null;
     protected $arguments = [];
 
-    public function __construct(?string $service = null, ?string $method = null, array $arguments = [])
-    {
+    public function __construct(
+        ?string $service = null,
+        ?string $method = null,
+        array $arguments = []
+    ) {
         $this->setService($service);
         $this->setMethod($method);
         $this->setArguments($arguments);
@@ -82,11 +85,20 @@ class ServiceMessage extends AbstractMessage
         $value = base64_decode($value);
         $value = json_decode($value, true);
 
-        return new ServiceMessage($value["service"], $value["method"], $value["arguments"]);
+        return new ServiceMessage(
+            $value["service"],
+            $value["method"],
+            $value["arguments"]
+        );
     }
 
     public function __toString() : string
     {
-        return sprintf("Service : %s, Method : %s, Arguments : %s", $this->service, $this->method, print_r($this->arguments, true));
+        return sprintf(
+            "Service : %s, Method : %s, Arguments : %s",
+            $this->service,
+            $this->method,
+            print_r($this->arguments, true)
+        );
     }
 }

@@ -18,17 +18,31 @@ class QueueServiceFactory
     {
         $queue_config = $container->get("Config")->getConfig()["queue"];
         $callback = $container->get($queue_config["callback"]);
-        $logger = ($container->has("Logger") ? $container->get("Logger") : $container->get(DefaultLogger::class));
+
+        if ($container->has("Logger")) {
+            $logger = $container->get("Logger");
+        } else {
+            $logger = $container->get(DefaultLogger::class);
+        }
 
         $connection = null;
 
         try {
-            $connection = AMQPStreamConnection::create_connection($queue_config["hosts"], $queue_config["options"]);
+            $connection = AMQPStreamConnection::create_connection(
+                $queue_config["hosts"],
+                $queue_config["options"]
+            );
             $connection->set_close_on_destruct($queue_config["set_close_on_destruct"]);
         } catch (AMQPIOException $ampqe) {
-            $logger->debug(sprintf("Server not ready - %s", $ampqe->getMessage()));
+            $logger->debug(sprintf(
+                "Server not ready - %s",
+                $ampqe->getMessage()
+            ));
         } catch (Exception $e) {
-            $logger->debug(sprintf("Server not ready - %s", $e->getMessage())); 
+            $logger->debug(sprintf(
+                "Server not ready - %s",
+                $e->getMessage()
+            ));
         }
 
         $queueService = new QueueService($connection, $callback);

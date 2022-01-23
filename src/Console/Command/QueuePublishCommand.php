@@ -29,11 +29,36 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
 
     protected function configure() : void
     {
-        $this->addOption("queue", null, InputOption::VALUE_OPTIONAL, "Queue to consume");
-        $this->addOption("service", null, InputOption::VALUE_REQUIRED, "Service name");
-        $this->addOption("method", null, InputOption::VALUE_OPTIONAL, "Method name");
-        $this->addOption("argument", "arg", InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, "Method arguments key=value, pass the option multiple time for multiple argument");
-        $this->addOption("qoption", "qopt", InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, "Queue option key=val, pass the option multiple time for multiple option");
+        $this->addOption(
+            "queue",
+            null,
+            InputOption::VALUE_OPTIONAL,
+            "Queue to consume"
+        );
+        $this->addOption(
+            "service",
+            null,
+            InputOption::VALUE_REQUIRED,
+            "Service name"
+        );
+        $this->addOption(
+            "method",
+            null,
+            InputOption::VALUE_OPTIONAL,
+            "Method name"
+        );
+        $this->addOption(
+            "argument",
+            "arg",
+            InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
+            "Method arguments key=value, pass the option multiple time for multiple argument"
+        );
+        $this->addOption(
+            "qoption",
+            "qopt",
+            InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
+            "Queue option key=val, pass the option multiple time for multiple option"
+        );
     }
 
     public function execute(InputInterface $input, OutputInterface $output) : int
@@ -67,7 +92,11 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
                 $qoptions[$k] = $v;
             }
 
-            $message = new ServiceMessage($service, $method, $arguments);
+            $message = new ServiceMessage(
+                $service,
+                $method,
+                $arguments
+            );
 
             $this->logger->info("Publish to ".$queue);
             $output->writeln("Publish to ".$queue);
