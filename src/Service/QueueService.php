@@ -72,11 +72,19 @@ class QueueService implements LoggerAwareInterface
                 "ticket" => null
             ];
 
+
             $message_options = ArrayUtils::merge($default, $message_options);
             call_user_func_array(
                 [$this->connection->channel(), "basic_publish"],
                 $message_options
             );
+
+            $this->logger->info(sprintf(
+                "Message publish to exchange : %s, queue : %s",
+                $message_options["exchange"] == "" ? "null" : $message_options["exchange"],
+                $message_options["routing_key"]
+            ));
+
             return true;
         } catch (Throwable $t) {
             $this->logger->debug(sprintf("Publish message failed"));
@@ -85,10 +93,10 @@ class QueueService implements LoggerAwareInterface
         }
     }
 
+    // timeout 0 equal forever
     public function consume(
         string $queue_name = "default",
         array $options = [],
-        bool $daemon = true,
         int $timeout = 0
     ) : void {
         try {
@@ -113,13 +121,21 @@ class QueueService implements LoggerAwareInterface
             $channel = $this->connection->channel();
             $channel->basic_qos(null, 1, null);
 
+            $this->logger->info(sprintf(
+                "Consume queue : %s, no_local : %s, no_ack : %s, exclusive : %s, nowait : %s, timeout : %s",
+                $options["queue"] ? 1 : 0,
+                $options["no_local"] ? 1 : 0,
+                $options["no_ack"] ? 1 : 0,
+                $options["exclusive"] ? 1 : 0,
+                $options["nowait"] ? 1 : 0,
+                $timeout
+            ));
+
             call_user_func_array([$channel, "basic_consume"], $options);
 
-            if ($daemon) {
-                while ($channel->is_open()) {
-                    $channel->wait(null, false, $timeout);
-                }
-            } else {
+            while ($channel->is_open()) {
+                // Will throw exception on timeout > 0 and break while loop
+                // TODO: Allow non blocking
                 $channel->wait(null, false, $timeout);
             }
         } catch (Throwable $t) {

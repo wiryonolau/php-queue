@@ -54,6 +54,12 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
             "Method arguments key=value, pass the option multiple time for multiple argument"
         );
         $this->addOption(
+            "count",
+            null,
+            InputOption::VALUE_OPTIONAL,
+            "Publish same message multiple time, default to 1"
+        );
+        $this->addOption(
             "qoption",
             "qopt",
             InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
@@ -68,6 +74,7 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
             $service = $input->getOption("service");
             $method = $input->getOption("method");
             $args = $input->getOption("argument");
+            $count = $input->getOption("count");
             $qopts = $input->getOption("qoption");
 
             if (is_null($queue) or !$queue) {
@@ -84,6 +91,12 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
                 $arguments[$k] = $v;
             }
 
+            if (is_null($count) or !$count) {
+                $count = 1;
+            } else {
+                $count = intval($count);
+            }
+
             $qoptions = [
                 "queue" => $queue
             ];
@@ -98,11 +111,14 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
                 $arguments
             );
 
-            $this->logger->info("Publish to ".$queue);
             $output->writeln("Publish to ".$queue);
 
             $this->queueService->create($qoptions);
-            $this->queueService->publish($queue, $message->getAMQPMessage());
+
+            for($i = 0; $i < $count; $i++) {
+                $this->queueService->publish($queue, $message->getAMQPMessage());
+            }
+
             return Command::SUCCESS;
         } catch (Exception $e) {
             $this->logger->debug($e->getMessage());

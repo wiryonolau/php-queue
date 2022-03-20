@@ -35,12 +35,6 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
             "Queue to consume"
         );
         $this->addOption(
-            "daemon",
-            "d",
-            InputOption::VALUE_NONE,
-            "Run as daemon"
-        );
-        $this->addOption(
             "timeout",
             "t",
             InputOption::VALUE_OPTIONAL,
@@ -67,7 +61,6 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
         try {
             $queue = $input->getOption("queue");
             $opts = $input->getOption("option");
-            $daemon = $input->getOption("daemon");
             $timeout = $input->getOption("timeout");
             $qopts = $input->getOption("qoption");
 
@@ -102,7 +95,6 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
                 $qoptions[$k] = $v;
             }
 
-            $this->logger->info("Consuming ".$queue);
             $output->writeln("Consuming ".$queue);
 
             $this->queueService->create($qoptions);

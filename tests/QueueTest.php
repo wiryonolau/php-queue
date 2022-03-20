@@ -26,11 +26,11 @@ final class QueueTest extends TestCase
 
 
         $messages = [
-            ["method" => "test", "text" => "this is the text\n"],
-            ["method" => "testThrowable", "text" => "last text\n"],
-            ["method" => "testNotDefinedArray", "text" => "test not defined array\n"],
-            ["method" => "testNotArray", "text" => "test not array\n"],
-            ["method" => "test", "text" => "another text\n"],
+            ["method" => "test", "text" => "this is the text"],
+            ["method" => "testThrowable", "text" => ""],
+            ["method" => "testNotDefinedArray", "text" => ""],
+            ["method" => "testNotArray", "text" => ""],
+            ["method" => "test", "text" => "another text"],
         ];
 
         foreach ($messages as $method => $message) {
@@ -42,15 +42,13 @@ final class QueueTest extends TestCase
         sleep(5);
 
         $result = array_map(function($msg) {
-            if ($msg["method"] != "test") {
-                return "";
-            } else {
-                return $msg["text"];
-            }
+            return trim($msg["text"]);
         }, $messages);
 
+        debug($result);
+
         $this->expectOutputString(implode("", $result));
-        $queueService->consume("default", [], true, 10);
+        $queueService->consume("default", [], 10);
 
     }
 }

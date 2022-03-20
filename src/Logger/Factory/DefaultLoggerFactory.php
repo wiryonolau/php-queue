@@ -7,7 +7,7 @@ use Laminas\Log\Logger;
 
 class DefaultLoggerFactory
 {
-    public function __invoke() : Logger
+    public function __invoke(ContainerInterface $container) : Logger
     {
         $logger = new Logger();
         $logger->addWriter('stream', null, ['stream' => 'php://stderr']);

@@ -11,7 +11,7 @@ class TestService
         return $text;
     }
 
-    public function testThrowable(int $text) : string
+    public function testThrowable() : string
     {
         echo $text;
         return $text;
@@ -20,7 +20,7 @@ class TestService
     public function testNotDefinedArray() : void
     {
         foreach($not_defined_array as $key => $value) {
-            echo $key, $value;
+            echo "$key:$value";
         }
     }
 
@@ -28,7 +28,7 @@ class TestService
     {
         $not_array = true;
         foreach($not_array as $key => $value) {
-            echo $key, $value;
+            echo "$key:$value";
         }
     }
 }
