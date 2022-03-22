@@ -68,12 +68,6 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
                 $queue = "default";
             }
 
-            if (is_null($daemon)) {
-                $daemon = true;
-            } else {
-                $daemon = boolval($daemon);
-            }
-
             if (is_null($timeout) or !$timeout) {
                 $timeout = 0;
             } else {
@@ -101,7 +95,6 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
             $this->queueService->consume(
                 $queue,
                 $options,
-                $daemon,
                 $timeout
             );
             return Command::SUCCESS;
