@@ -10,6 +10,7 @@ use Laminas\Stdlib\ArrayUtils;
 use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
 use Exception;
+use ReflectionMethod;
 use Throwable;
 
 class QueueService implements LoggerAwareInterface
@@ -27,24 +28,26 @@ class QueueService implements LoggerAwareInterface
         $this->callback = $callback;
     }
 
-    public function create(array $options = []) : void
+    public function create(array $options = []): void
     {
         $default = [
-            "queue" => "default" ,
+            "queue" => "default",
             "passive" => false,
             "durable" => false,
             "exclusive" => false,
             "auto_delete" => true,
             "nowait" => false,
-            "arguments"=> [],
+            "arguments" => [],
             "ticket" => null
         ];
 
         $options = ArrayUtils::merge($default, $options);
 
         try {
-            call_user_func_array([$this->connection->channel(),
-            "queue_declare"], $options);
+            call_user_func_array([
+                $this->connection->channel(),
+                "queue_declare"
+            ], $options);
         } catch (Throwable $t) {
             $this->logger->debug(sprintf(
                 "Creating queue channel \"%s\" failed",
@@ -54,17 +57,17 @@ class QueueService implements LoggerAwareInterface
     }
 
     public function publish(
-        string $queue_name = "default",
+        string $queue_name,
         AMQPMessage $message,
         array $message_options = []
-    ) : bool {
+    ): bool {
         try {
             if ($this->connection->isConnected() === false) {
                 $this->connection->connect();
             }
 
             $default = [
-                "message" => $message,
+                "msg" => $message,
                 "exchange" => "",
                 "routing_key" => $queue_name,
                 "mandatory" => false,
@@ -98,7 +101,7 @@ class QueueService implements LoggerAwareInterface
         string $queue_name = "default",
         array $options = [],
         int $timeout = 0
-    ) : void {
+    ): void {
         try {
             if ($this->connection->isConnected() === false) {
                 $this->connection->connect();
@@ -110,7 +113,7 @@ class QueueService implements LoggerAwareInterface
                 "no_local" => false,
                 "no_ack" => false,
                 "exclusive" => false,
-                "nowait"=> false,
+                "nowait" => false,
                 "callback" => $this->callback,
                 "ticket" =>  null,
                 "arguments" => []

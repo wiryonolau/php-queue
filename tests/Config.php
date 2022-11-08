@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 
 namespace Itseasy\Queue\Test;
 
@@ -28,12 +29,12 @@ class Config implements ArrayAccess
         return $this->config[$key];
     }
 
-    public function getConfig() : array
+    public function getConfig(): array
     {
         return $this->config;
     }
 
-    private function parseConfig($config_dirs) : void
+    private function parseConfig($config_dirs): void
     {
         $providers = [];
         foreach ($config_dirs as $config_dir) {
@@ -44,19 +45,27 @@ class Config implements ArrayAccess
         $this->config = $aggregator->getMergedConfig();
     }
 
-    public function offsetExists($offset) {
+    #[\ReturnTypeWillChange]
+    public function offsetExists($offset)
+    {
         return isset($this->config[$offset]);
     }
 
-    public function offsetGet($offset) {
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset)
+    {
         return $this->config[$offset];
     }
 
-    public function offsetSet($offset , $value) {
+    #[\ReturnTypeWillChange]
+    public function offsetSet($offset, $value)
+    {
         throw new Exception("Cannot set config programmatically");
     }
 
-    public function offsetUnset($offset) {
+    #[\ReturnTypeWillChange]
+    public function offsetUnset($offset)
+    {
         throw new Exception("Cannot set config programmatically");
     }
 }

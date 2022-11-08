@@ -1,4 +1,5 @@
 <?php
+
 namespace Itseasy\Queue\Test;
 
 use PHPUnit\Framework\TestCase;
@@ -15,8 +16,8 @@ final class QueueTest extends TestCase
 
         $app = new Application([
             "config_path" => [
-                __DIR__."/../config/*.config.php",
-                __DIR__."/config/*.config.php"
+                __DIR__ . "/../config/*.config.php",
+                __DIR__ . "/config/*.config.php"
             ],
         ]);
         $app->build();
@@ -33,7 +34,7 @@ final class QueueTest extends TestCase
             ["method" => "test", "text" => "another text"],
         ];
 
-        foreach ($messages as $method => $message) {
+        foreach ($messages as $message) {
             $serviceMessage = new ServiceMessage(Service\TestService::class, $message["method"], [$message["text"]]);
             $queueService->publish("default", $serviceMessage->getAMQPMessage());
         }
@@ -41,7 +42,7 @@ final class QueueTest extends TestCase
         // give time to publish before consume directly
         sleep(5);
 
-        $result = array_map(function($msg) {
+        $result = array_map(function ($msg) {
             return trim($msg["text"]);
         }, $messages);
 
@@ -49,6 +50,5 @@ final class QueueTest extends TestCase
 
         $this->expectOutputString(implode("", $result));
         $queueService->consume("default", [], 10);
-
     }
 }
