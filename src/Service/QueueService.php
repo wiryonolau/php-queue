@@ -10,6 +10,7 @@ use Laminas\Stdlib\ArrayUtils;
 use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
 use Exception;
+use PhpAmqpLib\Exchange\AMQPExchangeType;
 use Throwable;
 
 class QueueService implements LoggerAwareInterface
@@ -27,28 +28,51 @@ class QueueService implements LoggerAwareInterface
         $this->callback = $callback;
     }
 
-    public function create(array $options = []) : void
-    {
-        $default = [
-            "queue" => "default" ,
+    public function create(
+        array $queue_options = [],
+        array $exchange_options = []
+    ): void {
+        $queue_default = [
+            "queue" => "default",
             "passive" => false,
             "durable" => false,
             "exclusive" => false,
             "auto_delete" => true,
             "nowait" => false,
-            "arguments"=> [],
+            "arguments" => [],
             "ticket" => null
         ];
 
-        $options = ArrayUtils::merge($default, $options);
+        $exchange_default = [
+            "exchange" => "",
+            "type" => AMQPExchangeType::DIRECT,
+            "passive" => false,
+            "durable" => false,
+            "auto_delete" => false,
+            "internal" => false,
+            "arguments" => [],
+            "ticket" => null
+        ];
+
+        $queue_options = ArrayUtils::merge($queue_default, $queue_options);
+        $exchange_options = ArrayUtils::merge($exchange_default, $exchange_options);
 
         try {
-            call_user_func_array([$this->connection->channel(),
-            "queue_declare"], $options);
+            if (!empty($exchange_options["exchange"])) {
+                call_user_func_array([
+                    $this->connection->channel(),
+                    "exchange_declare"
+                ], $exchange_options);
+            }
+
+            call_user_func_array([
+                $this->connection->channel(),
+                "queue_declare"
+            ], $queue_options);
         } catch (Throwable $t) {
             $this->logger->debug(sprintf(
                 "Creating queue channel \"%s\" failed",
-                $options["queue"]
+                $queue_options["queue"]
             ));
         }
     }
@@ -57,25 +81,27 @@ class QueueService implements LoggerAwareInterface
         string $queue_name = "default",
         AMQPMessage $message,
         array $message_options = []
-    ) : bool {
+    ): bool {
         try {
             if ($this->connection->isConnected() === false) {
                 $this->connection->connect();
             }
 
+            $channel = $this->connection->channel();
+
             $default = [
                 "message" => $message,
-                "exchange" => "",
                 "routing_key" => $queue_name,
                 "mandatory" => false,
                 "immediate" => false,
-                "ticket" => null
+                "ticket" => null,
+                "exchange" => ""
             ];
 
-
             $message_options = ArrayUtils::merge($default, $message_options);
+
             call_user_func_array(
-                [$this->connection->channel(), "basic_publish"],
+                [$channel, "basic_publish"],
                 $message_options
             );
 
@@ -96,42 +122,45 @@ class QueueService implements LoggerAwareInterface
     // timeout 0 equal forever
     public function consume(
         string $queue_name = "default",
-        array $options = [],
+        array $queue_options = [],
         int $timeout = 0
-    ) : void {
+    ): void {
         try {
             if ($this->connection->isConnected() === false) {
                 $this->connection->connect();
             }
 
-            $default = [
+            $default_queue = [
                 "queue" => $queue_name,
                 "consumer_tag" => "",
                 "no_local" => false,
                 "no_ack" => false,
                 "exclusive" => false,
-                "nowait"=> false,
+                "nowait" => false,
                 "callback" => $this->callback,
                 "ticket" =>  null,
-                "arguments" => []
+                "arguments" => [],
             ];
 
-            $options = ArrayUtils::merge($default, $options);
+            $queue_options = ArrayUtils::merge($default_queue, $queue_options);
 
             $channel = $this->connection->channel();
             $channel->basic_qos(null, 1, null);
 
             $this->logger->info(sprintf(
                 "Consume queue : %s, no_local : %s, no_ack : %s, exclusive : %s, nowait : %s, timeout : %s",
-                $options["queue"] ? 1 : 0,
-                $options["no_local"] ? 1 : 0,
-                $options["no_ack"] ? 1 : 0,
-                $options["exclusive"] ? 1 : 0,
-                $options["nowait"] ? 1 : 0,
+                $queue_options["queue"] ? 1 : 0,
+                $queue_options["no_local"] ? 1 : 0,
+                $queue_options["no_ack"] ? 1 : 0,
+                $queue_options["exclusive"] ? 1 : 0,
+                $queue_options["nowait"] ? 1 : 0,
                 $timeout
             ));
 
-            call_user_func_array([$channel, "basic_consume"], $options);
+            call_user_func_array(
+                [$channel, "basic_consume"],
+                $queue_options
+            );
 
             while ($channel->is_open()) {
                 // Will throw exception on timeout > 0 and break while loop

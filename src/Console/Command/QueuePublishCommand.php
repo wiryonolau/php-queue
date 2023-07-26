@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Itseasy\Queue\Console\Command;
 
@@ -27,7 +27,7 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
         $this->queueService = $queueService;
     }
 
-    protected function configure() : void
+    protected function configure(): void
     {
         $this->addOption(
             "queue",
@@ -65,9 +65,15 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
             InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
             "Queue option key=val, pass the option multiple time for multiple option"
         );
+        $this->addOption(
+            "exoption",
+            "exopt",
+            InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
+            "Exchange option key=val, pass the option multiple time for multiple option"
+        );
     }
 
-    public function execute(InputInterface $input, OutputInterface $output) : int
+    public function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $queue = $input->getOption("queue");
@@ -76,6 +82,7 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
             $args = $input->getOption("argument");
             $count = $input->getOption("count");
             $qopts = $input->getOption("qoption");
+            $exopts = $input->getOption("exoption");
 
             if (is_null($queue) or !$queue) {
                 $queue = "default";
@@ -97,13 +104,21 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
                 $count = intval($count);
             }
 
-            $qoptions = [
+            $queue_options = [
                 "queue" => $queue
             ];
             foreach ($qopts as $qopt) {
                 list($k, $v) = explode("=", $qopt);
-                $qoptions[$k] = $v;
+                $queue_options[$k] = $v;
             }
+
+            $exchange_options = [];
+            foreach ($exopts as $opt) {
+                list($k, $v) = explode("=", $opt);
+                $exchange_options[$k] = $v;
+            }
+
+            $this->queueService->create($queue_options, $exchange_options);
 
             $message = new ServiceMessage(
                 $service,
@@ -111,11 +126,9 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
                 $arguments
             );
 
-            $output->writeln("Publish to ".$queue);
+            $output->writeln("Publish to " . $queue);
 
-            $this->queueService->create($qoptions);
-
-            for($i = 0; $i < $count; $i++) {
+            for ($i = 0; $i < $count; $i++) {
                 $this->queueService->publish($queue, $message->getAMQPMessage());
             }
 
