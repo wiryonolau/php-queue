@@ -94,7 +94,7 @@ class QueueService implements LoggerAwareInterface
 
             // Parameter order is fixed according to basic_publish
             $default = [
-                "message" => $message,
+                "msg" => $message,
                 "exchange" => "",
                 "routing_key" => $queue_name,
                 "mandatory" => false,
