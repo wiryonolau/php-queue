@@ -18,6 +18,7 @@ return [
                 "sslkey" => APP_DIR . "/etc/rabbitmq/cert/rabbitmq.key",
                 "sslverify" => true,
                 "sslverifyname" => true,
+                "sslselfsigned" => true
             ]
         ],
         "channels" => [

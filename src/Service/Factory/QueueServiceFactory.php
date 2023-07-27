@@ -52,7 +52,7 @@ class QueueServiceFactory
 
             $connection = AMQPConnectionFactory::create(
                 $amqpConfig,
-                ["allow_self_signed" => true]
+                ["allow_self_signed" => $server_config["sslselfsigned"] ?? null]
             );
             $connection->set_close_on_destruct(
                 $queue_config["set_close_on_destruct"]
