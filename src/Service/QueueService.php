@@ -19,6 +19,7 @@ class QueueService implements LoggerAwareInterface
 
     protected $connection;
     protected $callback;
+    protected $channel_id;
 
     public function __construct(
         ?AbstractConnection $connection = null,
@@ -26,6 +27,7 @@ class QueueService implements LoggerAwareInterface
     ) {
         $this->connection = $connection;
         $this->callback = $callback;
+        $this->channel_id = null;
     }
 
     public function create(
@@ -35,7 +37,7 @@ class QueueService implements LoggerAwareInterface
         $queue_default = [
             "queue" => "default",
             "passive" => false,
-            "durable" => false,
+            "durable" => true,
             "exclusive" => false,
             "auto_delete" => true,
             "nowait" => false,
@@ -47,8 +49,8 @@ class QueueService implements LoggerAwareInterface
             "exchange" => "",
             "type" => AMQPExchangeType::DIRECT,
             "passive" => false,
-            "durable" => false,
-            "auto_delete" => false,
+            "durable" => true,
+            "auto_delete" => true,
             "internal" => false,
             "arguments" => [],
             "ticket" => null
@@ -58,18 +60,21 @@ class QueueService implements LoggerAwareInterface
         $exchange_options = ArrayUtils::merge($exchange_default, $exchange_options);
 
         try {
+            $this->channel_id =  $this->connection->get_free_channel_id();
+            $channel = $this->connection->channel($this->channel_id);
             if (!empty($exchange_options["exchange"])) {
                 call_user_func_array([
-                    $this->connection->channel(),
+                    $channel,
                     "exchange_declare"
                 ], $exchange_options);
             }
 
             call_user_func_array([
-                $this->connection->channel(),
+                $channel,
                 "queue_declare"
             ], $queue_options);
         } catch (Throwable $t) {
+            $this->logger->debug($t->getMessage());
             $this->logger->debug(sprintf(
                 "Creating queue channel \"%s\" failed",
                 $queue_options["queue"]
@@ -79,26 +84,28 @@ class QueueService implements LoggerAwareInterface
 
     public function publish(
         string $queue_name = "default",
-        AMQPMessage $message,
+        ?AMQPMessage $message = null,
         array $message_options = []
     ): bool {
+        if (empty($message)) return false;
+
         try {
-            if ($this->connection->isConnected() === false) {
-                $this->connection->connect();
-            }
+            $channel = $this->connection->channel($this->channel_id);
 
-            $channel = $this->connection->channel();
-
+            // Parameter order is fixed according to basic_publish
             $default = [
                 "message" => $message,
+                "exchange" => "",
                 "routing_key" => $queue_name,
                 "mandatory" => false,
                 "immediate" => false,
                 "ticket" => null,
-                "exchange" => ""
             ];
 
-            $message_options = ArrayUtils::merge($default, $message_options);
+            $message_options = ArrayUtils::merge(
+                $default,
+                $message_options
+            );
 
             call_user_func_array(
                 [$channel, "basic_publish"],
@@ -107,7 +114,7 @@ class QueueService implements LoggerAwareInterface
 
             $this->logger->info(sprintf(
                 "Message publish to exchange : %s, queue : %s",
-                $message_options["exchange"] == "" ? "null" : $message_options["exchange"],
+                empty($message_options["exchange"]) ? "" : $message_options["exchange"],
                 $message_options["routing_key"]
             ));
 
@@ -122,14 +129,19 @@ class QueueService implements LoggerAwareInterface
     // timeout 0 equal forever
     public function consume(
         string $queue_name = "default",
+        string $exchange_name = "",
         array $queue_options = [],
         int $timeout = 0
     ): void {
         try {
-            if ($this->connection->isConnected() === false) {
-                $this->connection->connect();
-            }
+            $channel = $this->connection->channel($this->channel_id);
 
+            if (!empty($exchange_name)) {
+                $channel->queue_bind($queue_name, $exchange_name);
+            }
+            $channel->basic_qos(null, 1, null);
+
+            // Parameter order is fixed according to basic_consume
             $default_queue = [
                 "queue" => $queue_name,
                 "consumer_tag" => "",
@@ -142,14 +154,16 @@ class QueueService implements LoggerAwareInterface
                 "arguments" => [],
             ];
 
-            $queue_options = ArrayUtils::merge($default_queue, $queue_options);
+            $queue_options = ArrayUtils::merge(
+                $default_queue,
+                $queue_options
+            );
 
-            $channel = $this->connection->channel();
-            $channel->basic_qos(null, 1, null);
 
             $this->logger->info(sprintf(
-                "Consume queue : %s, no_local : %s, no_ack : %s, exclusive : %s, nowait : %s, timeout : %s",
-                $queue_options["queue"] ? 1 : 0,
+                "Consume queue : %s, Exchange: %s, no_local : %d, no_ack : %d, exclusive : %d, nowait : %d, timeout : %d",
+                $queue_name,
+                $exchange_name ?? "",
                 $queue_options["no_local"] ? 1 : 0,
                 $queue_options["no_ack"] ? 1 : 0,
                 $queue_options["exclusive"] ? 1 : 0,

@@ -9,9 +9,12 @@ return [
         "hosts" => [
             [
                 "host" => "localhost",
-                "port" => 5672,
-                "user" => "guest",
-                "password" => "guest"
+                "port" => 5671,
+                "user" => "principal",
+                "password" => "principal",
+                "issecure" => true,
+                "sslverify" => false,
+                "sslverifyname" => false,
             ]
         ],
         "channels" => [
@@ -28,8 +31,5 @@ return [
                 ]
             ]
         ],
-        "options" => [],
-        "callback" => Callback\ServiceCallback::class,
-        "set_close_on_destruct" => false
     ]
 ];

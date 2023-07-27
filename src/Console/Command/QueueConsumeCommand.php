@@ -35,6 +35,12 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
             "Queue to consume"
         );
         $this->addOption(
+            "exchange",
+            null,
+            InputOption::VALUE_OPTIONAL,
+            "Exchange to use"
+        );
+        $this->addOption(
             "timeout",
             "t",
             InputOption::VALUE_OPTIONAL,
@@ -66,6 +72,7 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
     ): int {
         try {
             $queue = $input->getOption("queue");
+            $exchange = $input->getOption("exchange");
             $opts = $input->getOption("option");
             $timeout = $input->getOption("timeout");
             $qopts = $input->getOption("qoption");
@@ -108,6 +115,7 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
 
             $this->queueService->consume(
                 $queue,
+                $exchange,
                 $message_options,
                 $timeout
             );

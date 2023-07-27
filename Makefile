@@ -28,23 +28,32 @@ run:
     php:$(PHP_VERSION)-cli-ext $(filter-out $@,$(MAKECMDGOALS))
 unittest:
 	$(MAKE) build
-	docker stop $$(basename "`pwd`")_rabbitmq || true
 	docker stop $$(basename "`pwd`")_cli || true
-	docker run --rm -it -d \
-	    -p 5672:5672 \
+	docker run --rm -d \
+		-p 5671:5671 \
+		-p 5672:5672 \
+      	-v $$(pwd)/etc/rabbitmq/cert:/etc/rabbitmq/cert:ro \
+      	-v $$(pwd)/etc/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro \
+      	-v $$(pwd)/etc/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro \
 	    --name $$(basename "`pwd`")_rabbitmq \
-	rabbitmq:3.8-alpine
+	rabbitmq:3.12-alpine || true
+	sleep 3
 	@while [ "$$(docker exec -it $$(basename "`pwd`")_rabbitmq rabbitmq-diagnostics -q check_port_connectivity > /dev/null && echo 0 || echo 1 )" -eq "1" ]; do \
        	echo "Awaiting port 5672 to be ready" ; \
        	sleep 1; \
     done
 	docker run --rm -it \
+		-e TEST_TLS=1 \
+		-e TEST_SERVICE_QUEUE=1 \
+		-e TEST_FANOUT=1 \
         -v $$(pwd):/srv/$$(basename "`pwd`") \
 		-w /srv/$$(basename "`pwd`") \
 		--user "$$(id -u):$$(id -g)" \
         --name $$(basename "`pwd`")_cli \
 		--network host \
     php:$(PHP_VERSION)-cli-ext vendor/bin/phpunit --verbose --debug tests
+clean:
+	docker stop $$(basename "`pwd`")_cli || true
 	docker stop $$(basename "`pwd`")_rabbitmq || true
 composer-install:
 	docker run --rm -it \

@@ -33,7 +33,13 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
             "queue",
             null,
             InputOption::VALUE_OPTIONAL,
-            "Queue to consume"
+            "Queue to publish"
+        );
+        $this->addOption(
+            "exchange",
+            null,
+            InputOption::VALUE_OPTIONAL,
+            "Exchange to use"
         );
         $this->addOption(
             "service",
@@ -77,6 +83,7 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
     {
         try {
             $queue = $input->getOption("queue");
+            $exchange = $input->getOption("exchange");
             $service = $input->getOption("service");
             $method = $input->getOption("method");
             $args = $input->getOption("argument");
@@ -129,7 +136,13 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
             $output->writeln("Publish to " . $queue);
 
             for ($i = 0; $i < $count; $i++) {
-                $this->queueService->publish($queue, $message->getAMQPMessage());
+                $this->queueService->publish(
+                    $queue,
+                    $message->getAMQPMessage(),
+                    [
+                        "exchange" => $exchange
+                    ]
+                );
             }
 
             return Command::SUCCESS;
