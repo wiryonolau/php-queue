@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Itseasy\Queue\Console\Command;
 
@@ -26,13 +26,19 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
         $this->queueService = $queueService;
     }
 
-    protected function configure() : void
+    protected function configure(): void
     {
         $this->addOption(
             "queue",
             null,
             InputOption::VALUE_OPTIONAL,
             "Queue to consume"
+        );
+        $this->addOption(
+            "exchange",
+            null,
+            InputOption::VALUE_OPTIONAL,
+            "Exchange to use"
         );
         $this->addOption(
             "timeout",
@@ -52,17 +58,25 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
             InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
             "Queue option key=val, pass the option multiple time for multiple option"
         );
+        $this->addOption(
+            "exoptions",
+            "exopt",
+            InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
+            "Exchange option key=val, pass the option multiple time for multiple option"
+        );
     }
 
     public function execute(
         InputInterface $input,
         OutputInterface $output
-    ) : int {
+    ): int {
         try {
             $queue = $input->getOption("queue");
+            $exchange = $input->getOption("exchange");
             $opts = $input->getOption("option");
             $timeout = $input->getOption("timeout");
             $qopts = $input->getOption("qoption");
+            $exopts = $input->getOption("exoption");
 
             if (is_null($queue) or !$queue) {
                 $queue = "default";
@@ -74,27 +88,35 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
                 $timeout = intval($timeout);
             }
 
-            $options = [];
+            $message_options = [];
             foreach ($opts as $opt) {
                 list($k, $v) = explode("=", $opt);
-                $options[$k] = $v;
+                $message_options[$k] = $v;
             }
 
-            $qoptions = [
+            $exchange_options = [];
+            foreach ($exopts as $opt) {
+                list($k, $v) = explode("=", $opt);
+                $exchange_options[$k] = $v;
+            }
+
+            $queue_options = [
                 "queue" => $queue,
                 "no_ack" => true
             ];
             foreach ($qopts as $qopt) {
                 list($k, $v) = explode("=", $qopt);
-                $qoptions[$k] = $v;
+                $queue_options[$k] = $v;
             }
 
-            $output->writeln("Consuming ".$queue);
+            $output->writeln("Consuming " . $queue);
 
-            $this->queueService->create($qoptions);
+            $this->queueService->create($queue_options, $exchange_options);
+
             $this->queueService->consume(
                 $queue,
-                $options,
+                $exchange,
+                $message_options,
                 $timeout
             );
             return Command::SUCCESS;

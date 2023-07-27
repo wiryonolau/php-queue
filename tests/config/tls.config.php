@@ -9,9 +9,15 @@ return [
         "hosts" => [
             [
                 "host" => "localhost",
-                "port" => 5672,
-                "user" => "guest",
-                "password" => "guest"
+                "port" => 5671,
+                "user" => "principal",
+                "password" => "principal",
+                "issecure" => true,
+                "sslcacert" => APP_DIR . "/etc/rabbitmq/cert/rabbitmq.ca.crt",
+                "sslcert" => APP_DIR . "/etc/rabbitmq/cert/rabbitmq.crt",
+                "sslkey" => APP_DIR . "/etc/rabbitmq/cert/rabbitmq.key",
+                "sslverify" => true,
+                "sslverifyname" => true,
             ]
         ],
         "channels" => [
@@ -28,8 +34,5 @@ return [
                 ]
             ]
         ],
-        "options" => [],
-        "callback" => Callback\ServiceCallback::class,
-        "set_close_on_destruct" => false
     ]
 ];

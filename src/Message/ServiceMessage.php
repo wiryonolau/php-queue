@@ -22,42 +22,42 @@ class ServiceMessage extends AbstractMessage
         $this->setArguments($arguments);
     }
 
-    public function setService(string $service) : void
+    public function setService(string $service): void
     {
         $this->service = $service;
     }
 
-    public function setMethod(?string $method = null) : void
+    public function setMethod(?string $method = null): void
     {
         $this->method = $method;
     }
 
-    public function setArgument($key, $value) : void
+    public function setArgument($key, $value): void
     {
         $this->arguments[$key] = $value;
     }
 
-    public function setArguments(array $arguments) : void
+    public function setArguments(array $arguments): void
     {
         $this->arguments = $arguments;
     }
 
-    public function getService() : string
+    public function getService(): string
     {
         return $this->service;
     }
 
-    public function getMethod() : ?string
+    public function getMethod(): ?string
     {
         return $this->method;
     }
 
-    public function getArguments() : ?array
+    public function getArguments(): ?array
     {
         return $this->arguments;
     }
 
-    public function encode() : string
+    public function encode(): string
     {
         return base64_encode(json_encode([
             "service" => $this->service,
@@ -66,7 +66,7 @@ class ServiceMessage extends AbstractMessage
         ]));
     }
 
-    public function run(ContainerInterface $container) : void
+    public function run(ContainerInterface $container): void
     {
         try {
             $service = $container->get($this->service);
@@ -80,7 +80,7 @@ class ServiceMessage extends AbstractMessage
         }
     }
 
-    public static function decode(string $value) : ServiceMessage
+    public static function decode(string $value): ServiceMessage
     {
         $value = base64_decode($value);
         $value = json_decode($value, true);
@@ -92,7 +92,7 @@ class ServiceMessage extends AbstractMessage
         );
     }
 
-    public function __toString() : string
+    public function __toString(): string
     {
         return sprintf(
             "Service : %s, Method : %s, Arguments : %s",

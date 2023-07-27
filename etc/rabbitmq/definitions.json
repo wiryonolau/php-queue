@@ -1,0 +1,53 @@
+{
+    "bindings": [],
+    "exchanges": [
+        {
+            "name": "transaction",
+            "vhost": "/",
+            "type": "fanout",
+            "durable": true,
+            "auto_delete": false,
+            "internal": false
+        }
+    ],
+    "global_parameters": [],
+    "parameters": [],
+    "permissions": [
+        {
+            "configure": ".*",
+            "read": ".*",
+            "user": "principal",
+            "vhost": "/",
+            "write": ".*"
+        },
+        {
+            "configure": "^(transaction|default|amq.gen.*|amq.default)$",
+            "read": "^(transaction|default|amq.gen.*|amq.default)$",
+            "user": "guest",
+            "vhost": "/",
+            "write": "^(transaction|default|amq.gen.*|amq.default)$"
+        }
+    ],
+    "policies": [],
+    "queues": [],
+    "topic_permissions": [],
+    "users": [
+        {
+            "limits": {},
+            "name": "principal",
+            "password": "principal",
+            "tags": []
+        },
+        {
+            "limits": {},
+            "name": "guest",
+            "password": "guest",
+            "tags": []
+        }
+    ],
+    "vhosts": [
+        {
+            "name": "/"
+        }
+    ]
+}
