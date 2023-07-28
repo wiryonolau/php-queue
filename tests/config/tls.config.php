@@ -13,12 +13,11 @@ return [
                 "user" => "principal",
                 "password" => "principal",
                 "issecure" => true,
-                "sslcacert" => APP_DIR . "/etc/rabbitmq/cert/rabbitmq.ca.crt",
-                "sslcert" => APP_DIR . "/etc/rabbitmq/cert/rabbitmq.crt",
-                "sslkey" => APP_DIR . "/etc/rabbitmq/cert/rabbitmq.key",
+                "sslcacert" => APP_DIR . "/etc/rabbitmq/cert/ca_certificate.pem",
+                "sslcert" => APP_DIR . "/etc/rabbitmq/cert/client_certificate.pem",
+                "sslkey" => APP_DIR . "/etc/rabbitmq/cert/client_key.pem",
                 "sslverify" => true,
-                "sslverifyname" => true,
-                "sslselfsigned" => true
+                "sslverifyname" => false,
             ]
         ],
         "channels" => [

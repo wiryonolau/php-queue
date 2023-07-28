@@ -192,4 +192,3 @@ class QueueService implements LoggerAwareInterface
         $this->connection->close();
     }
 }
-

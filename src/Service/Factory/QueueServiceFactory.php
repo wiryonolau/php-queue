@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Itseasy\Queue\Service\Factory;
 
 use Exception;
-use Itseasy\Queue\Connection\AMQPConnectionFactory;
+// use Itseasy\Queue\Connection\AMQPConnectionFactory;
 use Itseasy\Queue\Logger\DefaultLogger;
 use Itseasy\Queue\Service\QueueService;
 use PhpAmqpLib\Connection\AMQPConnectionConfig;
+use PhpAmqpLib\Connection\AMQPConnectionFactory;
 use PhpAmqpLib\Exception\AMQPIOException;
 use Psr\Container\ContainerInterface;
 
@@ -50,10 +51,8 @@ class QueueServiceFactory
             $amqpConfig->setIoType($queue_config["options"]["io_type"] ?? AMQPConnectionConfig::IO_TYPE_STREAM);
             $amqpConfig->setVhost($queue_config["options"]["vhost"] ?? "/");
 
-            $connection = AMQPConnectionFactory::create(
-                $amqpConfig,
-                ["allow_self_signed" => $server_config["sslselfsigned"] ?? null]
-            );
+            $connection = AMQPConnectionFactory::create($amqpConfig);
+
             $connection->set_close_on_destruct(
                 $queue_config["set_close_on_destruct"]
             );
