@@ -20,66 +20,18 @@ class QueueService implements LoggerAwareInterface
     protected $connection;
     protected $callback;
     protected $channel_id;
+    protected $channel_configs = [];
 
     public function __construct(
         ?AbstractConnection $connection = null,
-        $callback = null
+        $callback = null,
+        $channel_configs = []
     ) {
         $this->connection = $connection;
         $this->callback = $callback;
+        $this->channel_configs = $channel_configs;
+
         $this->channel_id = null;
-    }
-
-    public function create(
-        array $queue_options = [],
-        array $exchange_options = []
-    ): void {
-        $queue_default = [
-            "queue" => "default",
-            "passive" => false,
-            "durable" => true,
-            "exclusive" => false,
-            "auto_delete" => true,
-            "nowait" => false,
-            "arguments" => [],
-            "ticket" => null
-        ];
-
-        $exchange_default = [
-            "exchange" => "",
-            "type" => AMQPExchangeType::DIRECT,
-            "passive" => false,
-            "durable" => true,
-            "auto_delete" => true,
-            "internal" => false,
-            "arguments" => [],
-            "ticket" => null
-        ];
-
-        $queue_options = ArrayUtils::merge($queue_default, $queue_options);
-        $exchange_options = ArrayUtils::merge($exchange_default, $exchange_options);
-
-        try {
-            $this->channel_id =  $this->connection->get_free_channel_id();
-            $channel = $this->connection->channel($this->channel_id);
-            if (!empty($exchange_options["exchange"])) {
-                call_user_func_array([
-                    $channel,
-                    "exchange_declare"
-                ], $exchange_options);
-            }
-
-            call_user_func_array([
-                $channel,
-                "queue_declare"
-            ], $queue_options);
-        } catch (Throwable $t) {
-            $this->logger->debug($t->getMessage());
-            $this->logger->debug(sprintf(
-                "Creating queue channel \"%s\" failed",
-                $queue_options["queue"]
-            ));
-        }
     }
 
     public function publish(
@@ -90,7 +42,7 @@ class QueueService implements LoggerAwareInterface
         if (empty($message)) return false;
 
         try {
-            $channel = $this->connection->channel($this->channel_id);
+            $channel = $this->declareChannel();
 
             // Parameter order is fixed according to basic_publish
             $default = [
@@ -134,7 +86,7 @@ class QueueService implements LoggerAwareInterface
         int $timeout = 0
     ): void {
         try {
-            $channel = $this->connection->channel($this->channel_id);
+            $channel = $this->declareChannel();
 
             if (!empty($exchange_name)) {
                 $channel->queue_bind($queue_name, $exchange_name);
@@ -190,5 +142,112 @@ class QueueService implements LoggerAwareInterface
     public function close()
     {
         $this->connection->close();
+    }
+
+    private function declareQueue(
+        AMQPChannel $channel,
+        array $options = []
+    ): void {
+        $default = [
+            "queue" => "default",
+            "passive" => false,
+            "durable" => true,
+            "exclusive" => false,
+            "auto_delete" => true,
+            "nowait" => false,
+            "arguments" => [],
+            "ticket" => null
+        ];
+
+        $queue_options = ArrayUtils::merge(
+            $default,
+            $options
+        );
+
+        try {
+
+
+            call_user_func_array([
+                $channel,
+                "queue_declare"
+            ], $queue_options);
+        } catch (Throwable $t) {
+            $this->logger->debug($t->getMessage());
+            $this->logger->debug(sprintf(
+                "Declaring queue channel \"%s\" failed",
+                $queue_options["queue"]
+            ));
+        }
+    }
+
+    private function declareExchange(
+        AMQPChannel $channel,
+        array $options
+    ): void {
+        $default = [
+            "exchange" => "",
+            "type" => AMQPExchangeType::DIRECT,
+            "passive" => false,
+            "durable" => true,
+            "auto_delete" => true,
+            "internal" => false,
+            "arguments" => [],
+            "ticket" => null
+        ];
+
+        $options = ArrayUtils::merge(
+            $default,
+            $options
+        );
+
+        try {
+            $channel = $this->connection->channel($this->channel_id);
+            if (!empty($options["exchange"])) {
+                call_user_func_array([
+                    $channel,
+                    "exchange_declare"
+                ], $options);
+            }
+        } catch (Throwable $t) {
+            $this->logger->debug($t->getMessage());
+            $this->logger->debug(sprintf(
+                "Declaring exchange \"%s\" failed",
+                $options["exchange"]
+            ));
+        }
+    }
+
+    private function declareChannel(): AMQPChannel
+    {
+        $this->channel_id =  $this->connection->get_free_channel_id();
+        $channel = $this->connection->channel($this->channel_id);
+
+        foreach ($this->channel_configs as $channel_config) {
+            $channel_queue_config = [];
+            $channel_exchange_config = [];
+
+            if (empty($channel_config["queue"])) {
+                $channel_queue_config =  [
+                    "queue" => "default",
+                    "passive" => false,
+                    "durable" => false,
+                    "exclusive" => false,
+                    "auto_delete" => true,
+                    "nowait" => false,
+                    "arguments" => [],
+                    "ticket" => null
+                ];
+            } else if (!is_array($channel_config["queue"])) {
+                // old compatible config
+                $channel_queue_config = $channel_config;
+            }
+
+            $channel_exchange_config = $channel_config["exchange"] ?? [];
+
+            $this->declareExchange($channel, $channel_exchange_config);
+            $this->declareQueue($channel, $channel_queue_config);
+        }
+
+        return $channel;
     }
 }

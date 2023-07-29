@@ -51,6 +51,9 @@ class QueueServiceFactory
             $amqpConfig->setIoType($queue_config["options"]["io_type"] ?? AMQPConnectionConfig::IO_TYPE_STREAM);
             $amqpConfig->setVhost($queue_config["options"]["vhost"] ?? "/");
 
+            // Always use lazy connection to prevent creation when not used
+            $amqpConfig->setIsLazy(true);
+
             $connection = AMQPConnectionFactory::create($amqpConfig);
 
             $connection->set_close_on_destruct(
@@ -68,36 +71,13 @@ class QueueServiceFactory
             ));
         }
 
-        $queueService = new QueueService($connection, $callback);
+        $queueService = new QueueService(
+            $connection,
+            $callback,
+            $queue_config["channels"]
+        );
+
         $queueService->setLogger($logger);
-
-
-        foreach ($queue_config["channels"] as $channel_config) {
-            $channel_queue_config = [];
-            $channel_exchange_config = [];
-
-            if (empty($channel_config["queue"])) {
-                $channel_queue_config =  [
-                    "queue" => "default",
-                    "passive" => false,
-                    "durable" => false,
-                    "exclusive" => false,
-                    "auto_delete" => true,
-                    "nowait" => false,
-                    "arguments" => [],
-                    "ticket" => null
-                ];
-            } else if (!is_array($channel_config["queue"])) {
-                // old compatible config
-                $channel_queue_config = $channel_config;
-            }
-
-            $channel_exchange_config = $channel_config["exchange"] ?? [];
-            $queueService->create(
-                $channel_queue_config,
-                $channel_exchange_config
-            );
-        }
 
         return $queueService;
     }
