@@ -52,18 +52,6 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
             InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
             "Consume option key=val, pass the option multiple time for multiple option"
         );
-        $this->addOption(
-            "qoption",
-            "qopt",
-            InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
-            "Queue option key=val, pass the option multiple time for multiple option"
-        );
-        $this->addOption(
-            "exoptions",
-            "exopt",
-            InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
-            "Exchange option key=val, pass the option multiple time for multiple option"
-        );
     }
 
     public function execute(
@@ -75,8 +63,6 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
             $exchange = $input->getOption("exchange");
             $opts = $input->getOption("option");
             $timeout = $input->getOption("timeout");
-            $qopts = $input->getOption("qoption");
-            $exopts = $input->getOption("exoption");
 
             if (is_null($queue) or !$queue) {
                 $queue = "default";
@@ -94,30 +80,14 @@ class QueueConsumeCommand extends Command implements LoggerAwareInterface
                 $message_options[$k] = $v;
             }
 
-            $exchange_options = [];
-            foreach ($exopts as $opt) {
-                list($k, $v) = explode("=", $opt);
-                $exchange_options[$k] = $v;
-            }
-
-            $queue_options = [
-                "queue" => $queue,
-                "no_ack" => true
-            ];
-            foreach ($qopts as $qopt) {
-                list($k, $v) = explode("=", $qopt);
-                $queue_options[$k] = $v;
-            }
-
             $output->writeln("Consuming " . $queue);
-
-            $this->queueService->create($queue_options, $exchange_options);
 
             $this->queueService->consume(
                 $queue,
                 $exchange,
                 $message_options,
-                $timeout
+                $timeout,
+                null,
             );
             return Command::SUCCESS;
         } catch (Exception $e) {

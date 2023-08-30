@@ -65,18 +65,6 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
             InputOption::VALUE_OPTIONAL,
             "Publish same message multiple time, default to 1"
         );
-        $this->addOption(
-            "qoption",
-            "qopt",
-            InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
-            "Queue option key=val, pass the option multiple time for multiple option"
-        );
-        $this->addOption(
-            "exoption",
-            "exopt",
-            InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
-            "Exchange option key=val, pass the option multiple time for multiple option"
-        );
     }
 
     public function execute(InputInterface $input, OutputInterface $output): int
@@ -88,8 +76,6 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
             $method = $input->getOption("method");
             $args = $input->getOption("argument");
             $count = $input->getOption("count");
-            $qopts = $input->getOption("qoption");
-            $exopts = $input->getOption("exoption");
 
             if (is_null($queue) or !$queue) {
                 $queue = "default";
@@ -111,22 +97,6 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
                 $count = intval($count);
             }
 
-            $queue_options = [
-                "queue" => $queue
-            ];
-            foreach ($qopts as $qopt) {
-                list($k, $v) = explode("=", $qopt);
-                $queue_options[$k] = $v;
-            }
-
-            $exchange_options = [];
-            foreach ($exopts as $opt) {
-                list($k, $v) = explode("=", $opt);
-                $exchange_options[$k] = $v;
-            }
-
-            $this->queueService->create($queue_options, $exchange_options);
-
             $message = new ServiceMessage(
                 $service,
                 $method,
@@ -141,7 +111,8 @@ class QueuePublishCommand extends Command implements LoggerAwareInterface
                     $message->getAMQPMessage(),
                     [
                         "exchange" => $exchange
-                    ]
+                    ],
+                    null,
                 );
             }
 

@@ -37,12 +37,13 @@ class QueueService implements LoggerAwareInterface
     public function publish(
         string $queue_name = "default",
         ?AMQPMessage $message = null,
-        array $message_options = []
+        array $message_options = [],
+        string $channel_name = null
     ): bool {
         if (empty($message)) return false;
 
         try {
-            $channel = $this->declareChannel();
+            $channel = $this->declareChannel($channel_name);
 
             // Parameter order is fixed according to basic_publish
             $default = [
@@ -83,10 +84,12 @@ class QueueService implements LoggerAwareInterface
         string $queue_name = "default",
         string $exchange_name = "",
         array $queue_options = [],
-        int $timeout = 0
+        int $timeout = 0,
+        string $channel_name = null,
+        $callback = null
     ): void {
         try {
-            $channel = $this->declareChannel();
+            $channel = $this->declareChannel($channel_name);
 
             if (!empty($exchange_name)) {
                 $channel->queue_bind($queue_name, $exchange_name);
@@ -101,7 +104,7 @@ class QueueService implements LoggerAwareInterface
                 "no_ack" => false,
                 "exclusive" => false,
                 "nowait" => false,
-                "callback" => $this->callback,
+                "callback" => $callback ?? $this->callback,
                 "ticket" =>  null,
                 "arguments" => [],
             ];
@@ -217,16 +220,32 @@ class QueueService implements LoggerAwareInterface
         }
     }
 
-    private function declareChannel(): AMQPChannel
-    {
+    /**
+     * @param $channel_name string Load only this channel, for web request
+     */
+    private function declareChannel(
+        ?string $channel_name = null
+    ): AMQPChannel {
         $this->channel_id =  $this->connection->get_free_channel_id();
         $channel = $this->connection->channel($this->channel_id);
 
-        foreach ($this->channel_configs as $channel_config) {
+        if (!empty($channel_name)) {
+            $channel_configs = array_filter(
+                $this->channel_configs,
+                function ($k) use ($channel_name) {
+                    return $k == $channel_name;
+                },
+                ARRAY_FILTER_USE_KEY
+            );
+        } else {
+            $channel_configs = $this->channel_configs;
+        }
+
+        foreach ($channel_configs as $config) {
             $channel_queue_config = [];
             $channel_exchange_config = [];
 
-            if (empty($channel_config["queue"])) {
+            if (empty($config["queue"])) {
                 $channel_queue_config =  [
                     "queue" => "default",
                     "passive" => false,
@@ -237,12 +256,12 @@ class QueueService implements LoggerAwareInterface
                     "arguments" => [],
                     "ticket" => null
                 ];
-            } else if (!is_array($channel_config["queue"])) {
+            } else if (!is_array($config["queue"])) {
                 // old compatible config
-                $channel_queue_config = $channel_config;
+                $channel_queue_config = $config;
             }
 
-            $channel_exchange_config = $channel_config["exchange"] ?? [];
+            $channel_exchange_config = $config["exchange"] ?? [];
 
             $this->declareExchange($channel, $channel_exchange_config);
             $this->declareQueue($channel, $channel_queue_config);

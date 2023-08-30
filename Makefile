@@ -35,6 +35,7 @@ unittest:
       	-v $$(pwd)/etc/rabbitmq/cert:/etc/rabbitmq/cert:ro \
       	-v $$(pwd)/etc/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro \
       	-v $$(pwd)/etc/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro \
+		-v $$(pwd)/etc/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro \
 	    --name $$(basename "`pwd`")_rabbitmq \
 	rabbitmq:3.12-alpine || true
 	sleep 3
