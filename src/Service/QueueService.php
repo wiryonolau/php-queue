@@ -216,14 +216,14 @@ class QueueService implements LoggerAwareInterface
 
     private function bindQueue(
         AMQPChannel $channel,
-        string $exchange_name,
-        string $queue_name,
+        ?string $exchange_name = null,
+        ?string $queue_name = null,
         ?string $routing_key = null
     ): void {
         try {
             $channel->queue_bind(
-                $queue_name,
-                $exchange_name,
+                $queue_name ?? "",
+                $exchange_name ?? "",
                 empty($routing_key) ? $queue_name : $routing_key
             );
         } catch (Throwable $t) {
