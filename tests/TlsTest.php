@@ -27,7 +27,7 @@ final class TlsTest extends TestCase
         $queueService = $container->get(QueueService::class);
 
         $queueService->publish(
-            "default",
+            "",
             new AMQPMessage("test"),
             [
                 "exchange" => "transaction"
@@ -57,7 +57,7 @@ final class TlsTest extends TestCase
         $queueService = $container->get(QueueService::class);
 
         $queueService->publish(
-            "default",
+            "",
             new AMQPMessage("test"),
             [
                 "exchange" => "transaction"

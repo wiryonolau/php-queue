@@ -41,10 +41,13 @@ class QueueServiceFactory
             if ($server_config["issecure"] ?? false) {
                 $amqpConfig->setIsSecure(true);
                 $amqpConfig->setNetworkProtocol("ssl");
+
+                // This is path not content
                 $amqpConfig->setSslCert($server_config["sslcert"] ?? null);
                 $amqpConfig->setSslKey($server_config["sslkey"] ?? null);
                 $amqpConfig->setSslCaCert($server_config["sslcacert"] ?? null);
                 $amqpConfig->setSslCaPath($server_config["sslcapath"] ?? null);
+
                 $amqpConfig->setSslVerify($server_config["sslverify"] ?? true);
                 $amqpConfig->setSslVerifyName($server_config["sslverifyname"] ?? true);
             }

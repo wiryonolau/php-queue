@@ -42,8 +42,11 @@ final class ServiceQueueTest extends TestCase
                 [$message["text"]]
             );
             $queueService->publish(
-                "default",
-                $serviceMessage->getAMQPMessage()
+                "direct-queue",
+                $serviceMessage->getAMQPMessage(),
+                [
+                    "exchange" => "direct-exchange"
+                ]
             );
         }
 
@@ -57,6 +60,6 @@ final class ServiceQueueTest extends TestCase
         debug($result);
 
         $this->expectOutputString(implode("", $result));
-        $queueService->consume("default", "", [], 10);
+        $queueService->consume("direct-queue", "direct-exchange",  [], 10);
     }
 }

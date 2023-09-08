@@ -1,15 +1,4 @@
 {
-    "bindings": [],
-    "exchanges": [
-        {
-            "name": "transaction",
-            "vhost": "/",
-            "type": "fanout",
-            "durable": true,
-            "auto_delete": false,
-            "internal": false
-        }
-    ],
     "global_parameters": [],
     "parameters": [],
     "permissions": [
@@ -21,15 +10,32 @@
             "write": ".*"
         },
         {
-            "configure": "^(transaction|default|amq.gen.*|amq.default)$",
-            "read": "^(transaction|default|amq.gen.*|amq.default)$",
+            "configure": "^(direct.*|transaction|amq.gen.*|amq.default)$",
+            "read": "^(direct.*|transaction|amq.gen.*|amq.default)$",
             "user": "guest",
             "vhost": "/",
-            "write": "^(transaction|default|amq.gen.*|amq.default)$"
+            "write": "^(direct.*|transaction|amq.gen.*|amq.default)$"
         }
     ],
     "policies": [],
-    "queues": [],
+    "exchanges": [
+        {
+            "name": "transaction",
+            "vhost": "/",
+            "type": "fanout",
+            "durable": true,
+            "auto_delete": false,
+            "internal": false
+        },
+        {
+            "name": "direct-exchange",
+            "vhost": "/",
+            "type": "direct",
+            "durable": true,
+            "auto_delete": false,
+            "internal": false
+        }
+    ],
     "topic_permissions": [],
     "users": [
         {

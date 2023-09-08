@@ -2,20 +2,40 @@
 
 namespace Itseasy\Queue\Service;
 
-use Itseasy\Queue\Message\ServiceMessage;
-use PhpAmqpLib\Channel\AMQPChannel;
-use PhpAmqpLib\Message\AMQPMessage;
-use PhpAmqpLib\Connection\AbstractConnection;
-use Laminas\Stdlib\ArrayUtils;
 use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
-use Exception;
+use Laminas\Stdlib\ArrayUtils;
+use PhpAmqpLib\Channel\AMQPChannel;
+use PhpAmqpLib\Connection\AbstractConnection;
 use PhpAmqpLib\Exchange\AMQPExchangeType;
+use PhpAmqpLib\Message\AMQPMessage;
 use Throwable;
 
 class QueueService implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
+
+    const OPTIONS_QUEUE = [
+        "queue" => "",
+        "passive" => false,
+        "durable" => true,
+        "exclusive" => false,
+        "auto_delete" => false,
+        "nowait" => false,
+        "arguments" => [],
+        "ticket" => null
+    ];
+
+    const OPTIONS_EXCHANGE = [
+        "exchange" => "",
+        "type" => AMQPExchangeType::DIRECT,
+        "passive" => false,
+        "durable" => true,
+        "auto_delete" => true,
+        "internal" => false,
+        "arguments" => [],
+        "ticket" => null
+    ];
 
     protected $connection;
     protected $callback;
@@ -35,40 +55,38 @@ class QueueService implements LoggerAwareInterface
     }
 
     public function publish(
-        string $queue_name = "default",
+        string $queue_name = "",
         ?AMQPMessage $message = null,
-        array $message_options = [],
+        array $publish_options = [],
         string $channel_name = null
     ): bool {
         if (empty($message)) return false;
 
         try {
-            $channel = $this->declareChannel($channel_name);
+            $channel = $this->declareChannel($channel_name, $queue_name);
 
             // Parameter order is fixed according to basic_publish
-            $default = [
-                "msg" => $message,
-                "exchange" => "",
-                "routing_key" => $queue_name,
-                "mandatory" => false,
-                "immediate" => false,
-                "ticket" => null,
-            ];
-
-            $message_options = ArrayUtils::merge(
-                $default,
-                $message_options
+            $publish_options = ArrayUtils::merge(
+                [
+                    "msg" => $message,
+                    "exchange" => "",
+                    "routing_key" => $queue_name,
+                    "mandatory" => false,
+                    "immediate" => false,
+                    "ticket" => null,
+                ],
+                $publish_options
             );
 
             call_user_func_array(
                 [$channel, "basic_publish"],
-                $message_options
+                $publish_options
             );
 
             $this->logger->info(sprintf(
                 "Message publish to exchange : %s, queue : %s",
-                empty($message_options["exchange"]) ? "" : $message_options["exchange"],
-                $message_options["routing_key"]
+                empty($publish_options["exchange"]) ? "" : $publish_options["exchange"],
+                empty($publish_options["routing_key"]) ? "random" : $publish_options["routing_key"]
             ));
 
             return true;
@@ -81,54 +99,49 @@ class QueueService implements LoggerAwareInterface
 
     // timeout 0 equal forever
     public function consume(
-        string $queue_name = "default",
+        string $queue_name = "",
         string $exchange_name = "",
-        array $queue_options = [],
+        array $consume_options = [],
         int $timeout = 0,
         string $channel_name = null,
         $callback = null
     ): void {
         try {
-            $channel = $this->declareChannel($channel_name);
+            $channel = $this->declareChannel($channel_name, $queue_name);
 
-            if (!empty($exchange_name)) {
-                $channel->queue_bind($queue_name, $exchange_name);
-            }
             $channel->basic_qos(null, 1, null);
 
             // Parameter order is fixed according to basic_consume
-            $default_queue = [
-                "queue" => $queue_name,
-                "consumer_tag" => "",
-                "no_local" => false,
-                "no_ack" => false,
-                "exclusive" => false,
-                "nowait" => false,
-                "callback" => $callback ?? $this->callback,
-                "ticket" =>  null,
-                "arguments" => [],
-            ];
-
-            $queue_options = ArrayUtils::merge(
-                $default_queue,
-                $queue_options
+            $consume_options = ArrayUtils::merge(
+                [
+                    "queue" => $queue_name,
+                    "consumer_tag" => "",
+                    "no_local" => false,
+                    "no_ack" => false,
+                    "exclusive" => false,
+                    "nowait" => false,
+                    "callback" => $callback ?? $this->callback,
+                    "ticket" =>  null,
+                    "arguments" => [],
+                ],
+                $consume_options
             );
 
 
             $this->logger->info(sprintf(
                 "Consume queue : %s, Exchange: %s, no_local : %d, no_ack : %d, exclusive : %d, nowait : %d, timeout : %d",
-                $queue_name,
-                $exchange_name ?? "",
-                $queue_options["no_local"] ? 1 : 0,
-                $queue_options["no_ack"] ? 1 : 0,
-                $queue_options["exclusive"] ? 1 : 0,
-                $queue_options["nowait"] ? 1 : 0,
+                empty($queue_name) ? "random" : $queue_name,
+                empty($exchange_name) ? "" : $exchange_name,
+                $consume_options["no_local"] ? 1 : 0,
+                $consume_options["no_ack"] ? 1 : 0,
+                $consume_options["exclusive"] ? 1 : 0,
+                $consume_options["nowait"] ? 1 : 0,
                 $timeout
             ));
 
             call_user_func_array(
                 [$channel, "basic_consume"],
-                $queue_options
+                $consume_options
             );
 
             while ($channel->is_open()) {
@@ -151,34 +164,27 @@ class QueueService implements LoggerAwareInterface
         AMQPChannel $channel,
         array $options = []
     ): void {
-        $default = [
-            "queue" => "default",
-            "passive" => false,
-            "durable" => true,
-            "exclusive" => false,
-            "auto_delete" => true,
-            "nowait" => false,
-            "arguments" => [],
-            "ticket" => null
-        ];
-
         $queue_options = ArrayUtils::merge(
-            $default,
+            self::OPTIONS_QUEUE,
             $options
         );
 
         try {
-
-
-            call_user_func_array([
+            $queue = call_user_func_array([
                 $channel,
                 "queue_declare"
             ], $queue_options);
+
+
+            $this->logger->info(sprintf(
+                "Declaring queue \"%s\" succeed",
+                $queue[0]
+            ));
         } catch (Throwable $t) {
             $this->logger->debug($t->getMessage());
             $this->logger->debug(sprintf(
-                "Declaring queue channel \"%s\" failed",
-                $queue_options["queue"]
+                "Declaring queue \"%s\" failed",
+                empty($queue_options["queue"]) ? "random" : $queue_options["queue"]
             ));
         }
     }
@@ -187,24 +193,12 @@ class QueueService implements LoggerAwareInterface
         AMQPChannel $channel,
         array $options
     ): void {
-        $default = [
-            "exchange" => "",
-            "type" => AMQPExchangeType::DIRECT,
-            "passive" => false,
-            "durable" => true,
-            "auto_delete" => true,
-            "internal" => false,
-            "arguments" => [],
-            "ticket" => null
-        ];
-
         $options = ArrayUtils::merge(
-            $default,
+            self::OPTIONS_EXCHANGE,
             $options
         );
 
         try {
-            $channel = $this->connection->channel($this->channel_id);
             if (!empty($options["exchange"])) {
                 call_user_func_array([
                     $channel,
@@ -220,11 +214,35 @@ class QueueService implements LoggerAwareInterface
         }
     }
 
+    private function bindQueue(
+        AMQPChannel $channel,
+        string $exchange_name,
+        string $queue_name,
+        ?string $routing_key = null
+    ): void {
+        try {
+            $channel->queue_bind(
+                $queue_name,
+                $exchange_name,
+                empty($routing_key) ? $queue_name : $routing_key
+            );
+        } catch (Throwable $t) {
+            $this->logger->debug($t->getMessage());
+            $this->logger->debug(sprintf(
+                "Binding queue \"%s\" to exchange \"%s\" failed",
+                $queue_name,
+                $exchange_name
+            ));
+        }
+    }
+
     /**
      * @param $channel_name string Load only this channel, for web request
+     * @param $queue_name override queue name
      */
     private function declareChannel(
-        ?string $channel_name = null
+        ?string $channel_name = null,
+        ?string $queue_name = null
     ): AMQPChannel {
         $this->channel_id =  $this->connection->get_free_channel_id();
         $channel = $this->connection->channel($this->channel_id);
@@ -242,29 +260,28 @@ class QueueService implements LoggerAwareInterface
         }
 
         foreach ($channel_configs as $config) {
-            $channel_queue_config = [];
-            $channel_exchange_config = [];
-
             if (empty($config["queue"])) {
-                $channel_queue_config =  [
-                    "queue" => "default",
-                    "passive" => false,
-                    "durable" => false,
-                    "exclusive" => false,
-                    "auto_delete" => true,
-                    "nowait" => false,
-                    "arguments" => [],
-                    "ticket" => null
-                ];
+                $channel_queue_config = [];
             } else if (!is_array($config["queue"])) {
                 // old compatible config
                 $channel_queue_config = $config;
+            } else {
+                $channel_queue_config = $config["queue"];
+            }
+
+            if (!empty($queue_name)) {
+                $channel_queue_config["queue"] = $queue_name;
             }
 
             $channel_exchange_config = $config["exchange"] ?? [];
 
             $this->declareExchange($channel, $channel_exchange_config);
             $this->declareQueue($channel, $channel_queue_config);
+            $this->bindQueue(
+                $channel,
+                $channel_exchange_config["exchange"],
+                $channel_queue_config["queue"]
+            );
         }
 
         return $channel;

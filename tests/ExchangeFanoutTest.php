@@ -27,7 +27,7 @@ final class ExchangeFanoutTest extends TestCase
         $queueService = $container->get(QueueService::class);
 
         $queueService->publish(
-            "default",
+            "",
             new AMQPMessage("test fanout"),
             [
                 "exchange" => "transaction"
