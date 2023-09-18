@@ -57,13 +57,12 @@ class QueueService implements LoggerAwareInterface
     public function publish(
         string $queue_name = "",
         ?AMQPMessage $message = null,
-        array $publish_options = [],
-        string $channel_name = null
+        array $publish_options = []
     ): bool {
         if (empty($message)) return false;
 
         try {
-            $channel = $this->declareChannel($channel_name, $queue_name);
+            $channel = $this->declareChannel();
 
             // Parameter order is fixed according to basic_publish
             $publish_options = ArrayUtils::merge(
@@ -103,11 +102,10 @@ class QueueService implements LoggerAwareInterface
         string $exchange_name = "",
         array $consume_options = [],
         int $timeout = 0,
-        string $channel_name = null,
         $callback = null
     ): void {
         try {
-            $channel = $this->declareChannel($channel_name, $queue_name);
+            $channel = $this->declareChannel();
 
             $channel->basic_qos(null, 1, null);
 
@@ -163,7 +161,7 @@ class QueueService implements LoggerAwareInterface
     private function declareQueue(
         AMQPChannel $channel,
         array $options = []
-    ): void {
+    ): string {
         $queue_options = ArrayUtils::merge(
             self::OPTIONS_QUEUE,
             $options
@@ -180,6 +178,8 @@ class QueueService implements LoggerAwareInterface
                 "Declaring queue \"%s\" succeed",
                 $queue[0]
             ));
+
+            return $queue[0] ?? "";
         } catch (Throwable $t) {
             $this->logger->debug($t->getMessage());
             $this->logger->debug(sprintf(
@@ -237,29 +237,15 @@ class QueueService implements LoggerAwareInterface
     }
 
     /**
-     * @param $channel_name string Load only this channel, for web request
-     * @param $queue_name override queue name
+     * Declaring queue
+     * Note that queue must be unique, a queue cannot be bind to multiple exchange
      */
-    private function declareChannel(
-        ?string $channel_name = null,
-        ?string $queue_name = null
-    ): AMQPChannel {
+    private function declareChannel(): AMQPChannel
+    {
         $this->channel_id =  $this->connection->get_free_channel_id();
         $channel = $this->connection->channel($this->channel_id);
 
-        if (!empty($channel_name)) {
-            $channel_configs = array_filter(
-                $this->channel_configs,
-                function ($k) use ($channel_name) {
-                    return $k == $channel_name;
-                },
-                ARRAY_FILTER_USE_KEY
-            );
-        } else {
-            $channel_configs = $this->channel_configs;
-        }
-
-        foreach ($channel_configs as $config) {
+        foreach ($this->channel_configs as $config) {
             if (empty($config["queue"])) {
                 $channel_queue_config = [];
             } else if (!is_array($config["queue"])) {
@@ -269,18 +255,14 @@ class QueueService implements LoggerAwareInterface
                 $channel_queue_config = $config["queue"];
             }
 
-            if (!empty($queue_name)) {
-                $channel_queue_config["queue"] = $queue_name;
-            }
-
             $channel_exchange_config = $config["exchange"] ?? [];
 
             $this->declareExchange($channel, $channel_exchange_config);
-            $this->declareQueue($channel, $channel_queue_config);
+            $declared_queue = $this->declareQueue($channel, $channel_queue_config);
             $this->bindQueue(
                 $channel,
                 $channel_exchange_config["exchange"],
-                $channel_queue_config["queue"]
+                $declared_queue ?? ""
             );
         }
 
