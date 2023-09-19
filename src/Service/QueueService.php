@@ -242,7 +242,9 @@ class QueueService implements LoggerAwareInterface
      */
     private function declareChannel(): AMQPChannel
     {
-        $this->channel_id =  $this->connection->get_free_channel_id();
+        if (empty($this->channel_id)) {
+            $this->channel_id =  $this->connection->get_free_channel_id();
+        }
         $channel = $this->connection->channel($this->channel_id);
 
         foreach ($this->channel_configs as $config) {
