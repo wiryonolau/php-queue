@@ -2,13 +2,9 @@
 
 namespace Itseasy\Queue\Callback;
 
-use Psr\Container\ContainerInterface;
 use PhpAmqpLib\Message\AMQPMessage;
-use Itseasy\Queue\Message\ServiceMessage;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
-use Exception;
 use Throwable;
 
 class EchoCallback implements QueueCallbackInterface, LoggerAwareInterface

@@ -40,7 +40,6 @@ class QueueServiceFactory
 
             if ($server_config["issecure"] ?? false) {
                 $amqpConfig->setIsSecure(true);
-                $amqpConfig->setNetworkProtocol("ssl");
 
                 // This is path not content
                 $amqpConfig->setSslCert($server_config["sslcert"] ?? null);

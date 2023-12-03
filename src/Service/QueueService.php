@@ -65,6 +65,7 @@ class QueueService implements LoggerAwareInterface
             $channel = $this->declareChannel();
 
             // Parameter order is fixed according to basic_publish
+            // On publish routing key equal queue name
             $publish_options = ArrayUtils::merge(
                 [
                     "msg" => $message,
@@ -85,7 +86,7 @@ class QueueService implements LoggerAwareInterface
             $this->logger->info(sprintf(
                 "Message publish to exchange : %s, queue : %s",
                 empty($publish_options["exchange"]) ? "" : $publish_options["exchange"],
-                empty($publish_options["routing_key"]) ? "random" : $publish_options["routing_key"]
+                empty($publish_options["routing_key"]) ? "" : $publish_options["routing_key"]
             ));
 
             return true;
@@ -222,9 +223,9 @@ class QueueService implements LoggerAwareInterface
     ): void {
         try {
             $channel->queue_bind(
-                $queue_name ?? "",
-                $exchange_name ?? "",
-                empty($routing_key) ? $queue_name : $routing_key
+                $queue_name ?: "",
+                $exchange_name ?: "",
+                $routing_key ?: ""
             );
         } catch (Throwable $t) {
             $this->logger->debug($t->getMessage());
