@@ -51,7 +51,7 @@ final class ServiceQueueTest extends TestCase
         }
 
         // give time to publish before consume directly
-        sleep(5);
+        sleep(10);
 
         $result = array_map(function ($msg) {
             return trim($msg["text"]);

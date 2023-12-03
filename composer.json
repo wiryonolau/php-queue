@@ -7,14 +7,14 @@
     ],
     "config": {
         "platform": {
-            "php": "7.4.30",
+            "php": "7.4.33",
             "ext-sockets": "1"
         }
     },
     "require": {
         "php": "^7.4 || ^8.0 || ^8.1",
         "php-amqplib/php-amqplib": "^3.0",
-        "symfony/console": "^5.3",
+        "symfony/console": "^5.3 || ^6.0",
         "laminas/laminas-stdlib": "^3.4",
         "laminas/laminas-log": "^2.13"
     },
