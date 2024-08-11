@@ -31,8 +31,8 @@ unittest:
 	$(MAKE) build
 	docker stop $$(basename "`pwd`")_cli || true
 	docker run --rm -d \
-		-p 5671:5671 \
-		-p 5672:5672 \
+		-p 15671:5671 \
+		-p 15672:5672 \
 		-v $$(pwd)/etc/rabbitmq/cert:/etc/rabbitmq/cert:ro \
 		-v $$(pwd)/etc/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro \
 		-v $$(pwd)/etc/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro \
@@ -41,7 +41,7 @@ unittest:
 	rabbitmq:3.12-alpine || true
 	sleep 3
 	@while [ "$$(docker exec -it $$(basename "`pwd`")_rabbitmq rabbitmq-diagnostics -q check_port_connectivity > /dev/null && echo 0 || echo 1 )" -eq "1" ]; do \
-		echo "Awaiting port 5672 to be ready" ; \
+		echo "Awaiting port 15672 to be ready" ; \
 		sleep 1; \
 	done
 	docker run --rm -it \

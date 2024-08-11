@@ -9,7 +9,7 @@ return [
         "hosts" => [
             [
                 "host" => "localhost",
-                "port" => 5671,
+                "port" => 15671,
                 "user" => "principal",
                 "password" => "principal",
                 "issecure" => true,

@@ -16,7 +16,7 @@ class EchoCallback implements QueueCallbackInterface, LoggerAwareInterface
     public function __invoke(AMQPMessage $message)
     {
         try {
-            $this->logger->info("Receive " . $message->body);
+            $this->logger->info("Receive " . $message->getBody());
         } catch (Throwable $t) {
             $this->logger->debug($t->getMessage());
         } finally {

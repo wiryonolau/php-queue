@@ -25,9 +25,9 @@ class ServiceCallback implements QueueCallbackInterface, LoggerAwareInterface
     public function __invoke(AMQPMessage $message)
     {
         try {
-            $serviceMessage = ServiceMessage::decode($message->body);
+            $serviceMessage = ServiceMessage::decode($message->getBody());
             $serviceMessage->setLogger($this->getLogger());
-            $this->logger->info("Receive ".$serviceMessage);
+            $this->logger->info("Receive " . $serviceMessage);
             $serviceMessage->run($this->container);
         } catch (Throwable $t) {
             $this->logger->debug($t->getMessage());
