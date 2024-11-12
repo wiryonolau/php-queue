@@ -8,7 +8,7 @@ help: ## This help.
 .DEFAULT_GOAL := help
 
 THIS_FILE := $(lastword $(MAKEFILE_LIST))
-PHP_VERSION ?= "8.1"
+PHP_VERSION ?= "8.3"
 
 %:
 	@echo ""
@@ -30,11 +30,12 @@ unittest:
 	$(MAKE) build
 	docker stop $$(basename "`pwd`")_cli || true
 	docker run --rm -d \
-		-p 5671:5671 \
-		-p 5672:5672 \
+		-p 15671:5671 \
+		-p 15672:5672 \
       	-v $$(pwd)/etc/rabbitmq/cert:/etc/rabbitmq/cert:ro \
       	-v $$(pwd)/etc/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro \
       	-v $$(pwd)/etc/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro \
+		-v $$(pwd)/etc/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro \
 	    --name $$(basename "`pwd`")_rabbitmq \
 	rabbitmq:3.12-alpine || true
 	sleep 3
