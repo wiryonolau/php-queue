@@ -3,7 +3,6 @@
 namespace Itseasy\Queue;
 
 use Laminas\ServiceManager\Factory\InvokableFactory;
-use PhpParser\Node\Expr\CallLike;
 
 return [
     "service" => [

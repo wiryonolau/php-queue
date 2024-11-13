@@ -30,7 +30,7 @@ class QueueServiceFactory
 
         try {
             // New version single host only
-            $server_config = $queue_config["hosts"][0];
+            $server_config = $queue_config["hosts"]["default"];
 
             $amqpConfig = new AMQPConnectionConfig();
             $amqpConfig->setHost($server_config["host"]);
